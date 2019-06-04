@@ -1,0 +1,195 @@
+# data file for the Fltk User Interface Designer (fluid)
+version 1.0305
+header_name {.h}
+code_name {.cxx}
+decl {import Callbacks} {private local
+}
+
+decl {import Graphics.UI.FLTK.LowLevel.FLTKHS} {private local
+}
+
+Function {makeWindow(IO(Ref Window))} {open
+} {
+  Fl_Window paaIkkuna {open
+    xywh {847 136 840 496} type Double resizable visible
+  } {
+    Fl_Menu_Bar ylaMenu {selected
+      xywh {0 0 840 20} resizable
+    } {
+      Submenu tiedosto {
+        label Tiedosto
+        xywh {0 0 62 20} divider
+      } {
+        MenuItem tallennaSub {
+          label Tallenna
+          xywh {0 0 30 20}
+        }
+        MenuItem avaaSub {
+          label Avaa
+          xywh {0 0 30 20}
+        }
+        MenuItem tulostaSub {
+          label Tulosta
+          xywh {0 0 30 20}
+        }
+        MenuItem lopetaSub {
+          label Lopeta
+          xywh {0 0 30 20}
+        }
+      }
+      Submenu muokkaa {
+        label Muokkaa open
+        xywh {0 0 62 20} divider
+      } {
+        MenuItem uusiJasenSub {
+          label {Uusi jäsen}
+          xywh {0 0 30 20}
+        }
+        MenuItem muokkaaJasentaSub {
+          label {Muokkaa jäsentä}
+          xywh {0 0 30 20}
+        }
+        MenuItem lisaaHarrastusSub {
+          label {Lisää harrastus}
+          xywh {0 0 30 20}
+        }
+        MenuItem muokkaaHarrastustaSub {
+          label {Muokkaa harrastusta}
+          xywh {0 0 30 20}
+        }
+        MenuItem poistaJasenSub {
+          label {Poista jäsen}
+          xywh {0 0 30 20}
+        }
+        MenuItem poistaHarrastusSub {
+          label {Poista Harrastus}
+          xywh {0 0 30 20}
+        }
+      }
+      Submenu apua {
+        label Apua open
+        xywh {0 0 62 20} divider
+      } {
+        MenuItem apuaSub {
+          label Apua
+          xywh {0 0 30 20}
+        }
+        MenuItem tietojaSub {
+          label Tietoja
+          xywh {0 0 30 20}
+        }
+      }
+    }
+    Fl_Text_Display jasenTiedotDisplay {
+      label {Jäsenen tiedot}
+      xywh {170 40 400 410}
+    }
+    Fl_Group harrastusGroup {open
+      xywh {5 25 170 470}
+    } {
+      Fl_Button uusiJasen {
+        label {Uusi jäsen}
+        callback buttonCb
+        xywh {5 460 85 20}
+      }
+      Fl_Button tallenna {
+        label Tallenna
+        xywh {95 460 70 20}
+      }
+      Fl_Input hakuKentta {
+        label {input:}
+        xywh {5 61 160 24} labeltype NO_LABEL align 1
+      }
+      Fl_Choice hakuValitsin {
+        label Hakuehto
+        xywh {5 40 160 20} down_box BORDER_BOX align 1
+      } {
+        MenuItem nimiHaku {
+          label Nimi
+          xywh {15 15 30 20}
+        }
+        MenuItem hetuHaku {
+          label Hetu
+          xywh {15 15 30 20}
+        }
+        MenuItem katuHaku {
+          label Katuosoite
+          xywh {15 15 30 20}
+        }
+        MenuItem postinumeroHaku {
+          label Postinumero
+          xywh {15 15 30 20}
+        }
+        MenuItem postiosoiteHaku {
+          label Postiosoite
+          xywh {15 15 30 20}
+        }
+        MenuItem kotipuhelinHaku {
+          label Kotipuhelin
+          xywh {15 15 30 20}
+        }
+        MenuItem tyopuhelinHaku {
+          label {Työpuhelin}
+          xywh {15 15 30 20}
+        }
+        MenuItem autopuhelinHaku {
+          label Autopuhelin
+          xywh {15 15 30 20}
+        }
+        MenuItem liittymisHaku {
+          label Liittymisvuosi
+          xywh {15 15 30 20}
+        }
+        MenuItem jasenmaksuHaku {
+          label {Jäsenmaksu}
+          xywh {15 15 30 20}
+        }
+        MenuItem maksuHaku {
+          label {Maksettu maksu}
+          xywh {15 15 30 20}
+        }
+        MenuItem lisatietojaHaku {
+          label {Lisätietoja}
+          xywh {15 15 30 20}
+        }
+      }
+      Fl_Browser jasenValitsin {
+        label {Jäsenet}
+        xywh {5 100 160 350} align 1
+      }
+    }
+    Fl_Group harrastusGroup {
+      label {Jäsenen harrastukset} open
+      xywh {575 40 260 450}
+    } {
+      Fl_Browser harrastusBrowser {
+        xywh {575 60 260 390} labeltype NO_LABEL
+      }
+      Fl_Menu_Bar harrastusMenu {
+        xywh {575 40 260 20}
+      } {
+        MenuItem alaHarrastus {
+          label Ala
+          xywh {720 70 30 20} divider
+        }
+        MenuItem aloitusaikaHarrastus {
+          label Aloitusaika
+          xywh {720 70 30 20} divider
+        }
+        MenuItem tuntiaViikossaHarrastus {
+          label {h/vko}
+          xywh {720 70 30 20} divider
+        }
+      }
+      Fl_Button lisaaHarrastus {
+        label {Lisää harrastus}
+        xywh {575 460 124 20}
+      }
+      Fl_Button poistaHarrastus {
+        label {Poista Harrastus}
+        xywh {710 460 125 20}
+      }
+    }
+  }
+  code {return paaIkkuna} {}
+}

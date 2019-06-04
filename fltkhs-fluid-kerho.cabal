@@ -1,0 +1,51 @@
+name : fltkhs-fluid-kerho
+version : 0.1
+synopsis : Fltkhs Fluid toteutettu kerho-ohjelma
+description:
+    Examples of using Fluid with FLTKHS
+license : MIT
+license-file : LICENSE
+author : Jere Pakkanen
+build-type: Custom
+maintainer: jejopakk@student.jyu.fi
+homepage: 
+category: UI,Graphics
+cabal-version: >=2.0
+source-repository head
+  type: git
+  location: 
+
+custom-setup
+  setup-depends:
+      Cabal >=2.2.0.0 && <3
+    , base >=4.4
+    , filepath
+
+Flag FastCompile
+   Description: Turn off optimizations for faster compilation
+   Manual: True
+   Default: True
+
+Executable fltkhs-fluid-kerho
+  Main-Is: fluid-kerho.hs
+  Hs-Source-Dirs: src/
+  Build-Depends:
+    base == 4.*,
+    bytestring,
+    fltkhs >= 0.8.0.0,
+    text >= 1.2.2.0
+  default-language: Haskell2010
+  ghc-Options: -threaded
+  if os(windows)
+   ghc-Options: -optl-mwindows
+   ghc-Options: -pgml g++ "-optl-Wl,--allow-multiple-definition" "-optl-Wl,--whole-archive" "-optl-Wl,-Bstatic" "-optl-Wl,-lfltkc" "-optl-Wl,-Bdynamic" "-optl-Wl,--no-whole-archive"
+  if impl(ghc >= 7.10) && impl(ghc < 8.0) && flag(FastCompile)
+     ghc-Options: -O0
+  Other-Modules:
+                Kayttoliittyma,
+                Callbacks,
+                Tietorakenteet
+  if os(darwin)
+   ghc-Options: "-optl-Wl,-lfltkc"
+  if !os(darwin) && !os(windows)
+    ghc-Options: -pgml g++ "-optl-Wl,--allow-multiple-definition" "-optl-Wl,--whole-archive" "-optl-Wl,-Bstatic" "-optl-Wl,-lfltkc" "-optl-Wl,-Bdynamic" "-optl-Wl,--no-whole-archive"
