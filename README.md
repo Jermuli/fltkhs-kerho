@@ -20,4 +20,4 @@ Stackin asentamisen jälkeen käyttäjän tarvitsee asentaa [fltkhs](http://hack
 Tämän jälkeen kääntäminen onnistuu komentorivillä menemällä kohdekansioon ja kääntämällä lähdekoodi ohjelmaksi komennolla `stack install --flag fltkhs:bundled`. 
 Lopuksi ohjelman voi käynnistää komennolla `stack exec fltkhs-fluid-kerho` 
 (ohjelman käynnistäminen suoraan ei toimi, koska oletuksena vaadittavat linkitetyt tiedostot eivät löydy kansiosta johon ohjelma on käännetty)
-Src kansiosta löytyvää .fl tiedostoa, joka kääntämisen yhteydessä käännetään haskelliksi fltkhs avulla, pääsee tutkimaan [fltk](https://www.fltk.org/) mukana tulevalla tekstieditorilla fluidilla.
+Src kansiosta löytyvää .fl tiedostoa, joka kääntämisen yhteydessä käännetään haskelliksi fltkhs avulla, pääsee tutkimaan [fltk](https://www.fltk.org/) mukana tulevalla gui editorilla, fluidilla.
