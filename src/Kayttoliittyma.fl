@@ -13,7 +13,7 @@ Function {makeWindow(IO(Ref Window))} {open
   Fl_Window paaIkkuna {open
     xywh {847 136 840 496} type Double resizable visible
   } {
-    Fl_Menu_Bar ylaMenu {selected
+    Fl_Menu_Bar ylaMenu {
       xywh {0 0 840 20} resizable
     } {
       Submenu tiedosto {
@@ -84,7 +84,7 @@ Function {makeWindow(IO(Ref Window))} {open
       label {Jäsenen tiedot}
       xywh {170 40 400 410}
     }
-    Fl_Group harrastusGroup {open
+    Fl_Group jasenGroup {open
       xywh {5 25 170 470}
     } {
       Fl_Button uusiJasen {
@@ -162,25 +162,6 @@ Function {makeWindow(IO(Ref Window))} {open
       label {Jäsenen harrastukset} open
       xywh {575 40 260 450}
     } {
-      Fl_Browser harrastusBrowser {
-        xywh {575 60 260 390} labeltype NO_LABEL
-      }
-      Fl_Menu_Bar harrastusMenu {
-        xywh {575 40 260 20}
-      } {
-        MenuItem alaHarrastus {
-          label Ala
-          xywh {720 70 30 20} divider
-        }
-        MenuItem aloitusaikaHarrastus {
-          label Aloitusaika
-          xywh {720 70 30 20} divider
-        }
-        MenuItem tuntiaViikossaHarrastus {
-          label {h/vko}
-          xywh {720 70 30 20} divider
-        }
-      }
       Fl_Button lisaaHarrastus {
         label {Lisää harrastus}
         xywh {575 460 124 20}
@@ -189,6 +170,9 @@ Function {makeWindow(IO(Ref Window))} {open
         label {Poista Harrastus}
         xywh {710 460 125 20}
       }
+      Fl_Table harrastuTable {selected
+        xywh {575 45 260 410}
+      } {}
     }
   }
   code {return paaIkkuna} {}
