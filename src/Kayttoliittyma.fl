@@ -80,10 +80,6 @@ Function {makeWindow(IO(Ref Window))} {open
         }
       }
     }
-    Fl_Text_Display jasenTiedotDisplay {
-      label {Jäsenen tiedot}
-      xywh {170 40 400 410}
-    }
     Fl_Group jasenGroup {open
       xywh {5 25 170 470}
     } {
@@ -159,7 +155,7 @@ Function {makeWindow(IO(Ref Window))} {open
       }
     }
     Fl_Group harrastusGroup {
-      label {Jäsenen harrastukset} open
+      label {Jäsenen harrastukset} open selected
       xywh {575 40 260 450}
     } {
       Fl_Button lisaaHarrastus {
@@ -170,9 +166,59 @@ Function {makeWindow(IO(Ref Window))} {open
         label {Poista Harrastus}
         xywh {710 460 125 20}
       }
-      Fl_Table harrastuTable {selected
-        xywh {575 45 260 410}
-      } {}
+    }
+    Fl_Group jasenTietoGroup {
+      label {Jäsenen tiedot} open
+      xywh {170 40 400 450}
+    } {
+      Fl_Input nimiInput {
+        label Nimi
+        xywh {285 61 245 24}
+      }
+      Fl_Input hetuInput {
+        label Hetu
+        xywh {285 86 245 24}
+      }
+      Fl_Input katuosoiteInput {
+        label Katuosoite
+        xywh {285 111 245 24}
+      }
+      Fl_Input postinmrInput {
+        label Postinumero
+        xywh {285 136 245 24}
+      }
+      Fl_Input postiosoiteInput {
+        label Postiosoite
+        xywh {285 161 245 24}
+      }
+      Fl_Input kotipuhelinInput {
+        label Kotipuhelin
+        xywh {285 186 245 24}
+      }
+      Fl_Input tyopuhelinInput {
+        label {Työpuhelin}
+        xywh {285 211 245 24}
+      }
+      Fl_Input autopuhelinInput {
+        label Autopuhelin
+        xywh {285 236 245 24}
+      }
+      Fl_Input liittymisvuosiInput {
+        label Liittymisvuosi
+        xywh {285 261 245 24}
+      }
+      Fl_Input jasenmaksuInput {
+        label {Jäsenmaksu}
+        xywh {285 286 245 24}
+      }
+      Fl_Input maksettuMaksuInput {
+        label {Maksettu maksu}
+        xywh {285 311 245 24}
+      }
+      Fl_Input lisatietoInput {
+        label {Lisätietoja}
+        xywh {285 336 245 24}
+      }
     }
   }
   code {return paaIkkuna} {}
