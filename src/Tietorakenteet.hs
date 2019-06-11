@@ -1,6 +1,7 @@
 module Tietorakenteet where
 
---TODO: lisää tietorakenteita muokkaavat ja käsittelevät funktiot sekä relaatiot
+--TODO: lisää tietorakenteita muokkaavat ja käsittelevät funktiot sekä relaatiot, sekä selvitä onko relaatiot edes tarpeellisia
+--tässä tapauksessa
 data Jasen = Jasen { nimi :: String
                    , hetu :: String
                    , katuosoite :: String
@@ -11,10 +12,12 @@ data Jasen = Jasen { nimi :: String
                    , liittymisvuosi :: Int
                    , jasenmaksu :: Double
                    , maksettu :: Double
-                   , lisatieto :: String} deriving (Show)
+                   , lisatieto :: String
+                   , harrastukset :: [Harrastus]} deriving (Show)
 
 data Harrastus = Harrastus { laji :: String
                            , aloitusvuosi :: Int
                            , tuntiaViikossa :: Double} deriving (Show)
                             
-type Kerho = [Jasen]
+kerho = [] :: [Jasen]
+

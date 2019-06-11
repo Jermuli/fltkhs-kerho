@@ -8,10 +8,10 @@ decl {import Callbacks} {private local
 decl {import Graphics.UI.FLTK.LowLevel.FLTKHS} {private local
 }
 
-Function {makeWindow(IO(Ref Window))} {open
+Function {makeWindow(IO(Ref Window))} {open selected
 } {
   Fl_Window paaIkkuna {open
-    xywh {847 136 840 496} type Double resizable visible
+    xywh {847 136 840 496} type Double hide resizable
   } {
     Fl_Menu_Bar ylaMenu {
       xywh {0 0 840 20} resizable
@@ -80,7 +80,7 @@ Function {makeWindow(IO(Ref Window))} {open
         }
       }
     }
-    Fl_Group jasenGroup {open
+    Fl_Group jasenGroup {
       xywh {5 25 170 470}
     } {
       Fl_Button uusiJasen {
@@ -155,7 +155,7 @@ Function {makeWindow(IO(Ref Window))} {open
       }
     }
     Fl_Group harrastusGroup {
-      label {Jäsenen harrastukset} open selected
+      label {Jäsenen harrastukset} open
       xywh {575 40 260 450}
     } {
       Fl_Button lisaaHarrastus {
@@ -168,7 +168,7 @@ Function {makeWindow(IO(Ref Window))} {open
       }
     }
     Fl_Group jasenTietoGroup {
-      label {Jäsenen tiedot} open
+      label {Jäsenen tiedot}
       xywh {170 40 400 450}
     } {
       Fl_Input nimiInput {
