@@ -8,10 +8,10 @@ decl {import Callbacks} {private local
 decl {import Graphics.UI.FLTK.LowLevel.FLTKHS} {private local
 }
 
-Function {makeWindow(IO(Ref Window))} {open selected
+Function {makeWindow(IO(Ref Window))} {open
 } {
   Fl_Window paaIkkuna {open
-    xywh {847 136 840 496} type Double hide resizable
+    xywh {767 543 840 496} type Double resizable visible
   } {
     Fl_Menu_Bar ylaMenu {
       xywh {0 0 840 20} resizable
@@ -83,15 +83,6 @@ Function {makeWindow(IO(Ref Window))} {open selected
     Fl_Group jasenGroup {
       xywh {5 25 170 470}
     } {
-      Fl_Button uusiJasen {
-        label {Uusi jäsen}
-        callback buttonCb
-        xywh {5 460 85 20}
-      }
-      Fl_Button tallenna {
-        label Tallenna
-        xywh {95 460 70 20}
-      }
       Fl_Input hakuKentta {
         label {input:}
         xywh {5 61 160 24} labeltype NO_LABEL align 1
@@ -155,7 +146,7 @@ Function {makeWindow(IO(Ref Window))} {open selected
       }
     }
     Fl_Group harrastusGroup {
-      label {Jäsenen harrastukset} open
+      label {Jäsenen harrastukset}
       xywh {575 40 260 450}
     } {
       Fl_Button lisaaHarrastus {
@@ -219,6 +210,15 @@ Function {makeWindow(IO(Ref Window))} {open selected
         label {Lisätietoja}
         xywh {285 336 245 24}
       }
+    }
+    Fl_Button uusiJasen {
+      label {Uusi jäsen}
+      callback {(lisaaJasen nimiInput hetuInput katuosoiteInput postinmrInput postiosoiteInput kotipuhelinInput tyopuhelinInput autopuhelinInput liittymisvuosiInput jasenmaksuInput maksettuMaksuInput lisatietoInput)}
+      xywh {10 465 85 20}
+    }
+    Fl_Button tallenna {
+      label Tallenna
+      xywh {100 465 70 20}
     }
   }
   code {return paaIkkuna} {}

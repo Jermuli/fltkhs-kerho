@@ -1,5 +1,4 @@
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE CPP #-}
 
 module Main where
 import Kayttoliittyma
@@ -10,7 +9,7 @@ import Graphics.UI.FLTK.LowLevel.Fl_Enumerations
 import qualified Data.Text as T
 import Data.IORef
 import Data.List
-import Tietorakenteet
+--import Tietorakenteet
 import System.IO
 import Control.Monad
 import Data.Function
