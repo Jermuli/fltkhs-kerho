@@ -33,15 +33,26 @@ data Kerho = Kerho { kerhonNimi :: Maybe T.Text
 
 lisaajasen :: Jasen -> Kerho -> Kerho
 lisaajasen uusijasen kerho = Kerho (kerhonNimi kerho) ((jasenet kerho) ++ [uusijasen])
---
---poistaJasen :: Jasen -> Kerho
---
---muokkaaJasen :: Jasen -> Kerho
---
---lisaaHarrastus :: Harrastus -> Jasen
---
---poistaHarrastus :: Harrastus -> Jasen
---
+
+poistaJasen :: Jasen -> [Jasen] -> [Jasen]
+poistaJasen poistettava jasenet = case kerho of
+                                    []  -> []
+                                    x:xs   -> case x == poistettava of
+                                                True    -> xs
+                                                False   -> x:(poistaJasen xs)
+
+muokkaaJasen :: Jasen -> Jasen -> [Jasen] -> [Jasen]
+muokkaaJasen muokattava uudettiedot jasenet = case jasenet of
+                                                []  ->  []
+                                                x:xs -> case x == muokattava of
+                                                            True    -> uudettiedot:xs
+                                                            False   -> x:(muokkaaJasen xs)
+lisaaHarrastus :: Harrastus -> Jasen -> Jasen
+lisaaHarrastus harrastus jasen = Jasen (nimi jasen) (hetu jasen) (katuosoite jasen) (postinumero jasen) (postiosoite jasen) (kotipuhelin jasen) (tyopuhelin jasen) (autopuhelin jasen) (liittymisvuosi jasen) (jasenmaksu jasen) (maksettu jasen) (lisatieto jasen) ((harrastukset jasen) ++ harrastus)
+
+poistaHarrastus :: Harrastus -> Jasen -> Jasen
+poistaHarrastus poistettava jasen = Jasen (nimi jasen) (hetu jasen) (katuosoite jasen) (postinumero jasen) (postiosoite jasen) (kotipuhelin jasen) (tyopuhelin jasen) (autopuhelin jasen) (liittymisvuosi jasen) (jasenmaksu jasen) (maksettu jasen) (lisatieto jasen) (delete poistettava (harrastukset jasen))
+
 --muokkaaHarrastus :: Harrastus -> Jasen
 
 --lataaKerho :: IO T.Text -> IO Kerho
