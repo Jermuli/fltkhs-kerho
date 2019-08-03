@@ -20,8 +20,8 @@ valittuKerho :: IORef Kerho
 valittuKerho = unsafePerformIO $ newIORef (Kerho Nothing [])
 
 --TODO: poista callbackin testaus funktio ja lisää oikeat callbackit, jahka tietorakenteet ovat saatu valmiiksi
-lisaaJasen :: Ref Input -> Ref Input -> Ref Input -> Ref Input -> Ref Input -> Ref Input -> Ref Input -> Ref Input -> Ref Input -> Ref Input -> Ref Input -> Ref Input -> Ref Button -> IO ()
-lisaaJasen n' h' k' pn' po' kp' tp' ap' lv' jm' mm' l' b' = do
+muokkaaJasenCallback :: Ref Input -> Ref Input -> Ref Input -> Ref Input -> Ref Input -> Ref Input -> Ref Input -> Ref Input -> Ref Input -> Ref Input -> Ref Input -> Ref Input -> Ref Button -> IO ()
+muokkaaJasenCallback n' h' k' pn' po' kp' tp' ap' lv' jm' mm' l' b' = do
   nimi        <- (getValue n' )
   hetu        <- (getValue h' )
   katu        <- (getValue k' )
@@ -35,7 +35,7 @@ lisaaJasen n' h' k' pn' po' kp' tp' ap' lv' jm' mm' l' b' = do
   maksettuM   <- (getValue mm')
   lisa        <- (getValue l' )
   
-  modifyIORef valittuKerho (lisaajasen (Jasen   (Just nimi) 
+  modifyIORef valittuKerho (lisaaJasen (Jasen   (Just nimi) 
                                                 (Just hetu)
                                                 (Just katu)
                                                 (Just (read (T.unpack postiN) :: Int))
@@ -48,7 +48,27 @@ lisaaJasen n' h' k' pn' po' kp' tp' ap' lv' jm' mm' l' b' = do
                                                 (Just (read (T.unpack maksettuM) :: Double))
                                                 (Just lisa)
                                                 []))
-  l' <- getLabel b'
-  if (l' == "Hello World!")
-    then setLabel b' "Goodbye World"
-    else setLabel b' "Hello World"
+  --l' <- getLabel b'
+  --if (l' == "Hello World!")
+  --  then setLabel b' "Goodbye World"
+  --  else setLabel b' "Hello World"
+
+lisaaJasenCallback :: Ref SelectBrowser -> Ref Button -> IO ()
+lisaaJasenCallback selain button = do
+    modifyIORef valittuKerho (lisaaJasen (Jasen (Just (T.pack "uusi jäsen")) 
+                                                (Nothing)
+                                                (Nothing)
+                                                (Nothing)
+                                                (Nothing) 
+                                                (Nothing)
+                                                (Nothing)
+                                                (Nothing)
+                                                (Nothing)
+                                                (Nothing)
+                                                (Nothing)
+                                                (Nothing)
+                                                []))
+    
+    add selain ("uusi jäsen")
+    --ylin <- getTopline selain
+    --select selain ylin True (lisaaJasenCallback jasenSelain)

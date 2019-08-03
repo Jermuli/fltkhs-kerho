@@ -31,9 +31,9 @@ data Kerho = Kerho { kerhonNimi :: Maybe T.Text
 
 --valittuJasen :: Jasen
 --valittuJasen = Jasen Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing []
-
-lisaajasen :: Jasen -> Kerho -> Kerho
-lisaajasen uusijasen kerho = Kerho (kerhonNimi kerho) ((jasenet kerho) ++ [uusijasen])
+--
+lisaaJasen :: Jasen -> Kerho -> Kerho
+lisaaJasen uusijasen kerho = Kerho (kerhonNimi kerho) ((jasenet kerho) ++ [uusijasen])
 
 poistaJasen :: Jasen -> [Jasen] -> [Jasen]
 poistaJasen poistettava jasenet = case jasenet of

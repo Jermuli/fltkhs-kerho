@@ -9,7 +9,7 @@ import Graphics.UI.FLTK.LowLevel.Fl_Enumerations
 import qualified Data.Text as T
 import Data.IORef
 import Data.List
---import Tietorakenteet
+import Tietorakenteet
 import System.IO
 import Control.Monad
 import Data.Function
@@ -159,7 +159,7 @@ drawCell tableState table tc (TableCoordinate (Row row') (Column col')) rectangl
               flcPopClip
             _ -> return ()
       else return ()
-
+--
 autowidth :: Ref TableRow -> Int -> [[T.Text]] -> IO ()
 autowidth table pad rowData' = do
   flcSetFont headerFontFace headerFontSize
@@ -200,7 +200,7 @@ resize_window window table = do
     else do
       (x', y', h', _) <- fmap fromRectangle (getRectangle window)
       resize window $ toRectangle (x',y',totalWidth,h')
-   
+
 --TODO: korvaa testi tekstitiedosto kunnollisella datankäsittelyllä ja tee taulukon soluista input fieldejä
 main :: IO ()
 main = do
@@ -230,7 +230,7 @@ main = do
   readIORef rowData' >>= autowidth table 20
   setColor table whiteColor
   setCallback table (eventCallback tableState)
-  setResizable win (Just table)
+  --setResizable win (Just table)
   end win
   showWidget win
   _ <- FL.run
