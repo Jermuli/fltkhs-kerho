@@ -84,7 +84,7 @@ Function {makeWindow(IO(Ref Window))} {open
       xywh {5 25 170 470}
     } {
       Fl_Input hakuKentta {
-        label {input:} selected
+        label {input:}
         xywh {5 61 160 24} labeltype NO_LABEL align 1
       }
       Fl_Choice hakuValitsin {
@@ -146,7 +146,6 @@ Function {makeWindow(IO(Ref Window))} {open
       }
       Fl_Button tallenna {
         label Tallenna
-        callback {(muokkaaJasenCallback nimiInput hetuInput katuosoiteInput postinmrInput postiosoiteInput kotipuhelinInput tyopuhelinInput autopuhelinInput liittymisvuosiInput jasenmaksuInput maksettuMaksuInput lisatietoInput)}
         xywh {105 475 70 20}
       }
     }
@@ -220,6 +219,9 @@ Function {makeWindow(IO(Ref Window))} {open
   code {begin paaIkkuna;
 jasenSelain <- selectBrowserNew (Rectangle (Position (X 5) (Y 100)) (Size (Width 160) (Height 350))) Nothing;
 setType jasenSelain HoldBrowserType;
-setCallback  uusiJasen (lisaaJasenCallback jasenSelain);} {}
+setCallback jasenSelain (valitseJasenCallback nimiInput hetuInput katuosoiteInput postinmrInput postiosoiteInput kotipuhelinInput tyopuhelinInput autopuhelinInput liittymisvuosiInput jasenmaksuInput maksettuMaksuInput lisatietoInput);
+setCallback tallenna (muokkaaJasenCallback nimiInput hetuInput katuosoiteInput postinmrInput postiosoiteInput kotipuhelinInput tyopuhelinInput autopuhelinInput liittymisvuosiInput jasenmaksuInput maksettuMaksuInput lisatietoInput jasenSelain);
+setCallback uusiJasen (lisaaJasenCallback jasenSelain);} {selected
+  }
   code {return paaIkkuna} {}
 }

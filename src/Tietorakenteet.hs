@@ -42,12 +42,15 @@ poistaJasen poistettava jasenet = case jasenet of
                                                 True    -> xs
                                                 False   -> x:(poistaJasen poistettava xs)
 
-muokkaaJasen :: Jasen -> Jasen -> [Jasen] -> [Jasen]
-muokkaaJasen muokattava uudettiedot jasenet = case jasenet of
-                                                []  ->  []
-                                                x:xs -> case x == muokattava of
-                                                            True    -> uudettiedot:xs
-                                                            False   -> x:(muokkaaJasen muokattava uudettiedot xs)
+
+muokkaaJasen :: Jasen -> Int -> Kerho -> Kerho
+muokkaaJasen uudettiedot paikka kerho = Kerho (kerhonNimi kerho) (muokkaaJasenApu uudettiedot paikka (jasenet kerho))
+
+muokkaaJasenApu :: Jasen -> Int -> [Jasen] -> [Jasen]
+muokkaaJasenApu uudettiedot paikka (x:xs) = case paikka of
+                                                0   -> (uudettiedot:xs)
+                                                _   -> (x:(muokkaaJasenApu uudettiedot (paikka - 1) xs))
+
 lisaaHarrastus :: Harrastus -> Jasen -> Jasen
 lisaaHarrastus harrastus jasen = Jasen (nimi jasen) (hetu jasen) (katuosoite jasen) (postinumero jasen) (postiosoite jasen) (kotipuhelin jasen) (tyopuhelin jasen) (autopuhelin jasen) (liittymisvuosi jasen) (jasenmaksu jasen) (maksettu jasen) (lisatieto jasen) ((harrastukset jasen) ++ [harrastus])
 
