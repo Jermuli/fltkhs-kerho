@@ -35,7 +35,7 @@ muokkaaJasenCallback n' h' k' pn' po' kp' tp' ap' lv' jm' mm' l' selain b' = do
     jasenM      <- (getValue jm')
     maksettuM   <- (getValue mm')
     lisa        <- (getValue l' )
-    indeksi <- getValue selain
+    indeksi     <- getValue selain
     
     modifyIORef valittuKerho (muokkaaJasen  (Jasen (Just nimi) 
                                                 (Just hetu)
@@ -59,46 +59,50 @@ muokkaaJasenCallback n' h' k' pn' po' kp' tp' ap' lv' jm' mm' l' selain b' = do
 
 valitseJasenCallback :: Ref Input -> Ref Input -> Ref Input -> Ref Input -> Ref Input -> Ref Input -> Ref Input -> Ref Input -> Ref Input -> Ref Input -> Ref Input -> Ref Input -> Ref SelectBrowser -> IO ()
 valitseJasenCallback n' h' k' pn' po' kp' tp' ap' lv' jm' mm' l' selain = do
-    selainSize <- getSize selain
+    line <- getValue selain
+    outOfBounds <- displayed selain line
     indeksi <- getValue selain
-    kerho   <- (readIORef valittuKerho)
-    setValue n' (case nimi ((jasenet kerho) !!  (lineNumberToInt indeksi)) of
-                        Just x  -> x
-                        Nothing -> T.pack " ")
-    setValue h' (case hetu ((jasenet kerho) !!  (lineNumberToInt indeksi)) of
-                        Just x  -> x
-                        _       -> T.pack " ")
-    setValue k' (case katuosoite ((jasenet kerho) !!  (lineNumberToInt indeksi)) of
-                        Just x  ->  x
-                        _       -> T.pack " ")
-    setValue pn' (case postinumero ((jasenet kerho) !!  (lineNumberToInt indeksi)) of
-                        Just x  -> T.pack (show x)
-                        _       -> T.pack " ")
-    setValue po' (case postiosoite ((jasenet kerho) !!  (lineNumberToInt indeksi)) of
-                        Just x  -> x
-                        _       -> T.pack " ")
-    setValue kp' (case kotipuhelin ((jasenet kerho) !!  (lineNumberToInt indeksi)) of
-                        Just x  -> T.pack (show x)
-                        _       -> T.pack " ")
-    setValue tp' (case tyopuhelin ((jasenet kerho) !!  (lineNumberToInt indeksi)) of
-                        Just x  -> T.pack (show x)
-                        _       -> T.pack " ")
-    setValue ap' (case autopuhelin ((jasenet kerho) !!  (lineNumberToInt indeksi)) of
-                        Just x  -> T.pack (show x)
-                        _       -> T.pack " ")
-    setValue lv' (case liittymisvuosi ((jasenet kerho) !!  (lineNumberToInt indeksi)) of
-                        Just x  -> T.pack (show x)
-                        _       -> T.pack " ")
-    setValue jm' (case jasenmaksu ((jasenet kerho) !!  (lineNumberToInt indeksi)) of
-                        Just x  -> T.pack (show x)
-                        _       -> T.pack " ")
-    setValue mm' (case maksettu ((jasenet kerho) !!  (lineNumberToInt indeksi)) of
-                        Just x  -> T.pack (show x)
-                        _       -> T.pack " ")
-    setValue l' (case lisatieto ((jasenet kerho) !!  (lineNumberToInt indeksi)) of
-                        Just x  -> x
-                        _       -> T.pack " ")
-    return ()
+    case outOfBounds of
+        False  -> return ()
+        True   -> do 
+                kerho   <- (readIORef valittuKerho)
+                setValue n' (case nimi ((jasenet kerho) !!  (lineNumberToInt indeksi)) of
+                                    Just x  -> x
+                                    Nothing -> T.pack " ")
+                setValue h' (case hetu ((jasenet kerho) !!  (lineNumberToInt indeksi)) of
+                                    Just x  -> x
+                                    _       -> T.pack " ")
+                setValue k' (case katuosoite ((jasenet kerho) !!  (lineNumberToInt indeksi)) of
+                                    Just x  ->  x
+                                    _       -> T.pack " ")
+                setValue pn' (case postinumero ((jasenet kerho) !!  (lineNumberToInt indeksi)) of
+                                    Just x  -> T.pack (show x)
+                                    _       -> T.pack " ")
+                setValue po' (case postiosoite ((jasenet kerho) !!  (lineNumberToInt indeksi)) of
+                                    Just x  -> x
+                                    _       -> T.pack " ")
+                setValue kp' (case kotipuhelin ((jasenet kerho) !!  (lineNumberToInt indeksi)) of
+                                    Just x  -> T.pack (show x)
+                                    _       -> T.pack " ")
+                setValue tp' (case tyopuhelin ((jasenet kerho) !!  (lineNumberToInt indeksi)) of
+                                    Just x  -> T.pack (show x)
+                                    _       -> T.pack " ")
+                setValue ap' (case autopuhelin ((jasenet kerho) !!  (lineNumberToInt indeksi)) of
+                                    Just x  -> T.pack (show x)
+                                    _       -> T.pack " ")
+                setValue lv' (case liittymisvuosi ((jasenet kerho) !!  (lineNumberToInt indeksi)) of
+                                    Just x  -> T.pack (show x)
+                                    _       -> T.pack " ")
+                setValue jm' (case jasenmaksu ((jasenet kerho) !!  (lineNumberToInt indeksi)) of
+                                    Just x  -> T.pack (show x)
+                                    _       -> T.pack " ")
+                setValue mm' (case maksettu ((jasenet kerho) !!  (lineNumberToInt indeksi)) of
+                                    Just x  -> T.pack (show x)
+                                    _       -> T.pack " ")
+                setValue l' (case lisatieto ((jasenet kerho) !!  (lineNumberToInt indeksi)) of
+                                    Just x  -> x
+                                    _       -> T.pack " ")
+                return ()
 
 lineNumberToInt :: LineNumber -> Int
 lineNumberToInt (LineNumber x) = (read (show x)) - 1
