@@ -13,7 +13,7 @@ Function {makeWindow(IO(Ref Window))} {open
   Fl_Window paaIkkuna {open
     xywh {35 125 840 496} type Double hide
   } {
-    Fl_Menu_Bar ylaMenu {
+    Fl_Menu_Bar ylaMenu {open
       xywh {0 0 840 20}
     } {
       Submenu tiedosto {
@@ -67,7 +67,7 @@ Function {makeWindow(IO(Ref Window))} {open
         }
       }
       Submenu apua {
-        label Apua open
+        label Apua
         xywh {0 0 62 20} divider
       } {
         MenuItem apuaSub {
@@ -219,9 +219,17 @@ Function {makeWindow(IO(Ref Window))} {open
   code {begin paaIkkuna;
 jasenSelain <- selectBrowserNew (Rectangle (Position (X 5) (Y 100)) (Size (Width 160) (Height 350))) Nothing;
 setType jasenSelain HoldBrowserType;
+setInputType postinmrInput FlIntInput;
+setInputType kotipuhelinInput FlIntInput;
+setInputType tyopuhelinInput FlIntInput;
+setInputType autopuhelinInput FlIntInput;
+setInputType liittymisvuosiInput FlIntInput;
+setInputType maksettuMaksuInput FlFloatInput;
+setInputType jasenmaksuInput FlFloatInput;
 setCallback jasenSelain (valitseJasenCallback nimiInput hetuInput katuosoiteInput postinmrInput postiosoiteInput kotipuhelinInput tyopuhelinInput autopuhelinInput liittymisvuosiInput jasenmaksuInput maksettuMaksuInput lisatietoInput);
 setCallback tallenna (muokkaaJasenCallback nimiInput hetuInput katuosoiteInput postinmrInput postiosoiteInput kotipuhelinInput tyopuhelinInput autopuhelinInput liittymisvuosiInput jasenmaksuInput maksettuMaksuInput lisatietoInput jasenSelain);
-setCallback uusiJasen (lisaaJasenCallback jasenSelain);} {selected
+setCallback uusiJasen (lisaaJasenCallback jasenSelain);
+setCallback poistaJasenSub (poistaJasenCallback jasenSelain);} {selected
   }
   code {return paaIkkuna} {}
 }

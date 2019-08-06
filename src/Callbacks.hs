@@ -23,87 +23,134 @@ valittuKerho = unsafePerformIO $ newIORef (Kerho Nothing [])
 --TODO: poista callbackin testaus funktio ja lisää oikeat callbackit, jahka tietorakenteet ovat saatu valmiiksi
 muokkaaJasenCallback :: Ref Input -> Ref Input -> Ref Input -> Ref Input -> Ref Input -> Ref Input -> Ref Input -> Ref Input -> Ref Input -> Ref Input -> Ref Input -> Ref Input -> Ref SelectBrowser -> Ref Button -> IO ()
 muokkaaJasenCallback n' h' k' pn' po' kp' tp' ap' lv' jm' mm' l' selain b' = do
-    nimi        <- (getValue n' )
-    hetu        <- (getValue h' )
-    katu        <- (getValue k' )
-    postiN      <- (getValue pn')
-    postiO      <- (getValue po')
-    kotiP       <- (getValue kp')
-    tyoP        <- (getValue tp')
-    autoP       <- (getValue ap')
-    liittymis   <- (getValue lv')
-    jasenM      <- (getValue jm')
-    maksettuM   <- (getValue mm')
-    lisa        <- (getValue l' )
-    indeksi     <- getValue selain
+    indeksi <- getValue selain
+    if (lineNumberToInt indeksi) < 1
+        then do return ()
+        else do
+            nimi        <- (getValue n' )
+            hetu        <- (getValue h' )
+            katu        <- (getValue k' )
+            postiN      <- (getValue pn')
+            postiO      <- (getValue po')
+            kotiP       <- (getValue kp')
+            tyoP        <- (getValue tp')
+            autoP       <- (getValue ap')
+            liittymis   <- (getValue lv')
+            jasenM      <- (getValue jm')
+            maksettuM   <- (getValue mm')
+            lisa        <- (getValue l' )
+            
+            case (validoiHetu hetu) of
+                False   -> do
+                            setLabel h' "Henkilötunnus ei validi"
+                            hide h'
+                            showWidget h'
+                            setValue h' (T.pack "")
+                            return ()
+                True    -> do
+                            setLabel h' "Hetu"
+                            hide h'
+                            showWidget h'
+                            case (nimi /= "") && (katu /= "") && (postiO /= "") && (postiN /= "") && (kotiP /= "") && (tyoP /= "") && (autoP /= "") && (liittymis /= "") && (jasenM /= "") && (maksettuM /= "") of
+                                True    ->  do  modifyIORef valittuKerho (muokkaaJasen  (Jasen  (Just nimi) 
+                                                                                                (Just hetu)
+                                                                                                (Just katu)
+                                                                                                (Just (read (T.unpack postiN) :: Int))
+                                                                                                (Just postiO) 
+                                                                                                (Just (read (T.unpack kotiP) :: Int))
+                                                                                                (Just (read (T.unpack tyoP) :: Int))
+                                                                                                (Just (read (T.unpack autoP) :: Int))
+                                                                                                (Just (read (T.unpack liittymis) :: Int))
+                                                                                                (Just (read (T.unpack jasenM) :: Double))
+                                                                                                (Just (read (T.unpack maksettuM) :: Double))
+                                                                                                (Just lisa)
+                                                                                                [])
+                                                                                        (lineNumberToInt indeksi))
+                                                                                    
+                                                remove selain indeksi
+                                                insert selain indeksi nimi
+                                                sort selain
+                                                modifyIORef valittuKerho sortKerho
+                                _       ->  do 
+                                                --ilmoita että kaikki kentät ovat täytettävä
+                                                return ()
+--
+--hakuCallback :: Ref SelectBrowser -> Ref Choice -> Ref Input -> IO ()
+--hakuCallback selain valitsin haku = do
+--    case valitsin of
+--        "Nimi"              -> do
+--        "Hetu"              -> do
+--        "Katuosoite"        -> do
+--        "Postinumero"       -> do
+--        "Postiosoite"       -> do
+--        "Kotipuhelin"       -> do
+--        "Työpuhelin"        -> do
+--        "Autopuhelin"       -> do
+--        "Liittymisvuosi"    -> do
+--        "Jäsenmaksu"        -> do
+--        "Maksettu maksu"    -> do
+--        "Lisätietoja"       -> do
+poistaJasenCallback :: Ref SelectBrowser -> Ref MenuItemBase -> IO () -- MenuItemBase
+poistaJasenCallback selain b' = do
+    indeksi <- getValue selain
+    if (lineNumberToInt indeksi) < 1
+        then do return ()
+        else do
+            modifyIORef valittuKerho (poistaJasen (lineNumberToInt indeksi))
+            remove selain indeksi
     
-    modifyIORef valittuKerho (muokkaaJasen  (Jasen (Just nimi) 
-                                                (Just hetu)
-                                                (Just katu)
-                                                (Just (read (T.unpack postiN) :: Int))
-                                                (Just postiO) 
-                                                (Just (read (T.unpack kotiP) :: Int))
-                                                (Just (read (T.unpack tyoP) :: Int))
-                                                (Just (read (T.unpack autoP) :: Int))
-                                                (Just (read (T.unpack liittymis) :: Int))
-                                                (Just (read (T.unpack jasenM) :: Double))
-                                                (Just (read (T.unpack maksettuM) :: Double))
-                                                (Just lisa)
-                                                [])
-                                            (lineNumberToInt indeksi))
-
-    
-    remove selain indeksi
-    insert selain indeksi nimi
-
-
 valitseJasenCallback :: Ref Input -> Ref Input -> Ref Input -> Ref Input -> Ref Input -> Ref Input -> Ref Input -> Ref Input -> Ref Input -> Ref Input -> Ref Input -> Ref Input -> Ref SelectBrowser -> IO ()
 valitseJasenCallback n' h' k' pn' po' kp' tp' ap' lv' jm' mm' l' selain = do
     line <- getValue selain
-    outOfBounds <- displayed selain line
+    sisalla <- displayed selain line
     indeksi <- getValue selain
-    case outOfBounds of
+    case sisalla of
         False  -> return ()
         True   -> do 
+                setLabel h' "Hetu"
+                hide h'
+                showWidget h'
                 kerho   <- (readIORef valittuKerho)
-                setValue n' (case nimi ((jasenet kerho) !!  (lineNumberToInt indeksi)) of
+                setValue n' (case nimi ((jasenet kerho) !!  (lineNumberToInt indeksi)) of --jasenTekstiksi nimi ((jasenet kerho) !! (lineNumberToInt indeksi)) 
                                     Just x  -> x
-                                    Nothing -> T.pack " ")
+                                    Nothing -> T.pack "")
                 setValue h' (case hetu ((jasenet kerho) !!  (lineNumberToInt indeksi)) of
                                     Just x  -> x
-                                    _       -> T.pack " ")
+                                    _       -> T.pack "")
                 setValue k' (case katuosoite ((jasenet kerho) !!  (lineNumberToInt indeksi)) of
                                     Just x  ->  x
-                                    _       -> T.pack " ")
+                                    _       -> T.pack "")
                 setValue pn' (case postinumero ((jasenet kerho) !!  (lineNumberToInt indeksi)) of
                                     Just x  -> T.pack (show x)
-                                    _       -> T.pack " ")
+                                    _       -> T.pack "")
                 setValue po' (case postiosoite ((jasenet kerho) !!  (lineNumberToInt indeksi)) of
                                     Just x  -> x
-                                    _       -> T.pack " ")
+                                    _       -> T.pack "")
                 setValue kp' (case kotipuhelin ((jasenet kerho) !!  (lineNumberToInt indeksi)) of
                                     Just x  -> T.pack (show x)
-                                    _       -> T.pack " ")
+                                    _       -> T.pack "")
                 setValue tp' (case tyopuhelin ((jasenet kerho) !!  (lineNumberToInt indeksi)) of
                                     Just x  -> T.pack (show x)
-                                    _       -> T.pack " ")
+                                    _       -> T.pack "")
                 setValue ap' (case autopuhelin ((jasenet kerho) !!  (lineNumberToInt indeksi)) of
                                     Just x  -> T.pack (show x)
-                                    _       -> T.pack " ")
+                                    _       -> T.pack "")
                 setValue lv' (case liittymisvuosi ((jasenet kerho) !!  (lineNumberToInt indeksi)) of
                                     Just x  -> T.pack (show x)
-                                    _       -> T.pack " ")
+                                    _       -> T.pack "")
                 setValue jm' (case jasenmaksu ((jasenet kerho) !!  (lineNumberToInt indeksi)) of
                                     Just x  -> T.pack (show x)
-                                    _       -> T.pack " ")
+                                    _       -> T.pack "")
                 setValue mm' (case maksettu ((jasenet kerho) !!  (lineNumberToInt indeksi)) of
                                     Just x  -> T.pack (show x)
-                                    _       -> T.pack " ")
+                                    _       -> T.pack "")
                 setValue l' (case lisatieto ((jasenet kerho) !!  (lineNumberToInt indeksi)) of
                                     Just x  -> x
-                                    _       -> T.pack " ")
+                                    _       -> T.pack "")
                 return ()
 
+
+                
 lineNumberToInt :: LineNumber -> Int
 lineNumberToInt (LineNumber x) = (read (show x)) - 1
 
@@ -123,3 +170,5 @@ lisaaJasenCallback selain button = do
                                                 (Nothing)
                                                 []))
     add selain ("uusi jäsen")
+    sort selain
+    modifyIORef valittuKerho sortKerho
