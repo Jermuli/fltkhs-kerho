@@ -8,10 +8,13 @@ decl {import Callbacks} {private local
 decl {import Graphics.UI.FLTK.LowLevel.FLTKHS} {private local
 }
 
+decl {import Data.IORef} {private local
+}
+
 Function {makeWindow(IO(Ref Window))} {open
 } {
   Fl_Window paaIkkuna {open
-    xywh {35 125 840 496} type Double hide
+    xywh {35 125 840 496} type Double visible
   } {
     Fl_Menu_Bar ylaMenu {open
       xywh {0 0 840 20}
@@ -226,10 +229,30 @@ setInputType autopuhelinInput FlIntInput;
 setInputType liittymisvuosiInput FlIntInput;
 setInputType maksettuMaksuInput FlFloatInput;
 setInputType jasenmaksuInput FlFloatInput;
-setCallback jasenSelain (valitseJasenCallback nimiInput hetuInput katuosoiteInput postinmrInput postiosoiteInput kotipuhelinInput tyopuhelinInput autopuhelinInput liittymisvuosiInput jasenmaksuInput maksettuMaksuInput lisatietoInput);
+
 setCallback tallenna (muokkaaJasenCallback nimiInput hetuInput katuosoiteInput postinmrInput postiosoiteInput kotipuhelinInput tyopuhelinInput autopuhelinInput liittymisvuosiInput jasenmaksuInput maksettuMaksuInput lisatietoInput jasenSelain);
 setCallback uusiJasen (lisaaJasenCallback jasenSelain);
-setCallback poistaJasenSub (poistaJasenCallback jasenSelain);} {selected
+setCallback poistaJasenSub (poistaJasenCallback jasenSelain);
+
+
+
+
+
+harrastusTable <- tableRowNew (Rectangle(Position (X 550) (Y 40)) (Size (Width 275) (Height 415))) Nothing Nothing (drawCell tableState) defaultCustomWidgetFuncs defaultCustomTableFuncs;
+setColHeader harrastusTable True;
+setColResize harrastusTable True;
+setSelectionColor harrastusTable blueColor;
+setWhen harrastusTable [WhenRelease];
+setType harrastusTable SelectSingle;
+readIORef rowData >>= setRows harrastusTable . Rows . length;
+readIORef rowData >>= setCols harrastusTable . Columns . maximum . map length;
+setRowHeightAll harrastusTable 18;
+readIORef rowData >>= autowidth harrastusTable 20;
+setColor harrastusTable whiteColor;
+setCallback harrastusTable (eventCallback tableState);
+
+setCallback jasenSelain (valitseJasenCallback nimiInput hetuInput katuosoiteInput postinmrInput postiosoiteInput kotipuhelinInput tyopuhelinInput autopuhelinInput liittymisvuosiInput jasenmaksuInput maksettuMaksuInput lisatietoInput harrastusTable);
+setCallback lisaaHarrastus (lisaaHarrastusCallback harrastusTable jasenSelain);} {selected
   }
   code {return paaIkkuna} {}
 }

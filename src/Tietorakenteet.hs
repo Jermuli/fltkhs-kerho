@@ -3,8 +3,7 @@ import Data.List
 import Data.Char
 import qualified Data.Text as T
 
---TODO: lisää tietorakenteita muokkaavat ja käsittelevät funktiot sekä relaatiot, sekä selvitä onko relaatiot edes tarpeellisia
---tässä tapauksessa
+-- Jäsenen tietorakenne
 data Jasen = Jasen { nimi :: Maybe T.Text
                    , hetu :: Maybe T.Text
                    , katuosoite :: Maybe T.Text
@@ -19,17 +18,19 @@ data Jasen = Jasen { nimi :: Maybe T.Text
                    , lisatieto :: Maybe T.Text
                    , harrastukset :: [Harrastus]} deriving (Eq, Show)
 
+-- Harrastuksen tietorakenne
 data Harrastus = Harrastus { laji :: Maybe T.Text
                            , aloitusvuosi :: Maybe Int
                            , tuntiaViikossa :: Maybe Double} deriving (Eq, Show)
-                            
+-- Kerhon tietorakenne                            
 data Kerho = Kerho { kerhonNimi :: Maybe T.Text
                    , jasenet :: [Jasen]}
+-- Jäsenten järjestäminen nimen mukaan (jäsenlistaa varten)
 instance Ord Jasen where
     compare (Jasen nimi1 _ _ _ _ _ _ _ _ _ _ _ _) (Jasen nimi2 _ _ _ _ _ _ _ _ _ _ _ _) | nimi1 > nimi2 = GT
                                                                                         | nimi1 < nimi2 = LT
                                                                                         | nimi1 == nimi2 = EQ
-
+-- Henkilötunnuksen validoiva funktio
 validoiHetu :: T.Text -> Bool
 validoiHetu he = let unpacked = T.unpack he
                    in case length unpacked of
@@ -40,11 +41,14 @@ validoiHetu he = let unpacked = T.unpack he
                                 False   -> False
                         _   -> False
 
+-- Looginen AND listoille
 tarkistaTotuudet :: [Bool] -> Bool
 tarkistaTotuudet [] = True
 tarkistaTotuudet (x:xs) = case x == True of
                             True    -> tarkistaTotuudet xs
                             False   -> False
+                            
+-- TODO
 --valittuKerho :: IO T.Text -> IO Kerho
 --valittuKerho <- lataaKerho tiedostoNimi  -- = Kerho Nothing []
 --return()
@@ -52,30 +56,37 @@ tarkistaTotuudet (x:xs) = case x == True of
 --valittuJasen :: Jasen
 --valittuJasen = Jasen Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing []
 --
+
+-- Lisää jäsenen kehoon
 lisaaJasen :: Jasen -> Kerho -> Kerho
 lisaaJasen uusijasen kerho = Kerho (kerhonNimi kerho) ((jasenet kerho) ++ [uusijasen])
 
+-- Poistaa tietyssä paikassa olevan jäsenen kerhosta (ehkä tämän voisi korvata vaan poistamalla tietyn jäsenen kerhosta)
 poistaJasen :: Int -> Kerho -> Kerho
 poistaJasen paikka kerho = Kerho (kerhonNimi kerho) (poistaJasenApu paikka (jasenet kerho))
 
+-- Rekursiivinen apufunktio jäsenen poistoon
 poistaJasenApu :: Int -> [Jasen] -> [Jasen]
 poistaJasenApu paikka []        = []
 poistaJasenApu paikka (x:xs)    = case paikka of
                                             0   -> xs
                                             _   -> (x:(poistaJasenApu (paikka - 1) xs))
 
+-- Laittaa kerhon jäsenet järjestykseen nimen mukaan
 sortKerho :: Kerho -> Kerho
 sortKerho kerho = Kerho (kerhonNimi kerho) (sort (jasenet kerho))
 
+-- Muokkaa tietyssä tietyssä paikassa olevan jäsenen tietoja
 muokkaaJasen :: Jasen -> Int -> Kerho -> Kerho
 muokkaaJasen uudettiedot paikka kerho = Kerho (kerhonNimi kerho) (muokkaaJasenApu uudettiedot paikka (jasenet kerho))
 
+-- Rekursiivinen apufunktio jäsenen muokkaukselle
 muokkaaJasenApu :: Jasen -> Int -> [Jasen] -> [Jasen]
 muokkaaJasenApu uudettiedot paikka []       = []
 muokkaaJasenApu uudettiedot paikka (x:xs)   = case paikka of
                                                 0   -> (uudettiedot:xs)
                                                 _   -> (x:(muokkaaJasenApu uudettiedot (paikka - 1) xs))
---testaa
+-- Muuttaa jäsenen tiedot tekstiksi, ei käytetä tällähetkellä, koska ääkköset eivät näytä kääntyvän oikein tätä käyttäessä
 jasenTekstiksi :: Show a => Jasen -> (Jasen -> Maybe a) -> T.Text
 jasenTekstiksi jasen f = case f jasen of
                             Nothing ->  T.pack " "
@@ -83,12 +94,15 @@ jasenTekstiksi jasen f = case f jasen of
                                         --  -> x
                                         --_           -> T.pack (show x)
 
+-- Lisätään harrastus jäsenelle
 lisaaHarrastus :: Harrastus -> Jasen -> Jasen
 lisaaHarrastus harrastus jasen = Jasen (nimi jasen) (hetu jasen) (katuosoite jasen) (postinumero jasen) (postiosoite jasen) (kotipuhelin jasen) (tyopuhelin jasen) (autopuhelin jasen) (liittymisvuosi jasen) (jasenmaksu jasen) (maksettu jasen) (lisatieto jasen) ((harrastukset jasen) ++ [harrastus])
 
+-- Poistetaan harrastus jäseneltä
 poistaHarrastus :: Harrastus -> Jasen -> Jasen
 poistaHarrastus poistettava jasen = Jasen (nimi jasen) (hetu jasen) (katuosoite jasen) (postinumero jasen) (postiosoite jasen) (kotipuhelin jasen) (tyopuhelin jasen) (autopuhelin jasen) (liittymisvuosi jasen) (jasenmaksu jasen) (maksettu jasen) (lisatieto jasen) (delete poistettava (harrastukset jasen))
 
+-- Työn alla olevia juttuja
 --muokkaaHarrastus :: Harrastus -> Jasen
 
 --lataaKerho :: IO T.Text -> IO Kerho

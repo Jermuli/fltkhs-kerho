@@ -13,14 +13,25 @@ import Data.IORef
 import Control.Monad
 import System.IO.Unsafe
 import qualified Data.Text as T
+import Data.List hiding (sort, insert)
+import Data.Function
 
-valittuJasen :: IORef Jasen
-valittuJasen = unsafePerformIO $ newIORef (Jasen Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing [])
+-- TODO: Tärkeät: lisää jäsenten etsiminen, jäsenten sekä harrastusten poisto, tiedostoon tallentaminen ja avaaminen
+-- Pienempi prioriteetti: tee paremmat tarkistukset jäsenen infonsyöttöön, selvitä miksi redraw ei toimi joissain tapauksissa, lisää harrastusten muokkaus
 
+-- Toistaiseksi käyttämätön 
+valittuJasen :: IORef [Harrastus]
+valittuJasen = unsafePerformIO $ newIORef []
+
+-- Tietorakenne jossa säilytetään tiedot käsiteltävästä kerhosta
 valittuKerho :: IORef Kerho
 valittuKerho = unsafePerformIO $ newIORef (Kerho Nothing [])
 
---TODO: poista callbackin testaus funktio ja lisää oikeat callbackit, jahka tietorakenteet ovat saatu valmiiksi
+--Testi jäsen
+testiJasen :: Jasen 
+testiJasen = Jasen (Just "terve") (Just "070995-2351") (Just "taitoniekantie") (Just 0671134) (Just "jkl") (Just 095458) (Just 084357) (Just 5487515) (Just 20) (Just 20) (Just 20) Nothing [(Harrastus (Just "taido") (Just 50) (Just 40)), (Harrastus (Just "karate") (Just 5) (Just 2)),(Harrastus (Just "aikido") (Just 30) (Just 10))]
+
+-- Ottaa jäsenentietokentistä arvot ja tarkistaa ovatko ne oikein, jonka jälkeen päivittää tiedot tietorakenteeseen
 muokkaaJasenCallback :: Ref Input -> Ref Input -> Ref Input -> Ref Input -> Ref Input -> Ref Input -> Ref Input -> Ref Input -> Ref Input -> Ref Input -> Ref Input -> Ref Input -> Ref SelectBrowser -> Ref Button -> IO ()
 muokkaaJasenCallback n' h' k' pn' po' kp' tp' ap' lv' jm' mm' l' selain b' = do
     line <- getValue selain
@@ -45,21 +56,25 @@ muokkaaJasenCallback n' h' k' pn' po' kp' tp' ap' lv' jm' mm' l' selain b' = do
                 then do
                         mapM virheet [n', k', pn', po', kp', tp', ap', lv', jm', mm']
                         case validoiHetu hetu of 
-                            False   -> do setLabel h' "Henkilötunnus ei validi"
-                            _       -> do setLabel h' "Hetu"
+                            False   -> do   
+                                            setLabelcolor h' redColor
+                                            redraw h'
+                            _       -> do 
+                                            labelMustaksi h'
                         return ()
                 else do   
-                        setLabel h' "Hetu"
-                        setLabel n' "Nimi"
-                        setLabel k' "Katuosoite"
-                        setLabel pn' "Postinumero"
-                        setLabel po' "Postiosoite"
-                        setLabel kp' "Kotipuhelin"
-                        setLabel tp' "Työpuhelin"
-                        setLabel ap' "Autopuhelin"
-                        setLabel lv' "Liittymisvuosi"
-                        setLabel jm' "Jäsenmaksu"
-                        setLabel mm' "Maksettu maksu"
+                        labelMustaksi h' 
+                        labelMustaksi n' 
+                        labelMustaksi k' 
+                        labelMustaksi pn'
+                        labelMustaksi po'
+                        labelMustaksi kp'
+                        labelMustaksi tp'
+                        labelMustaksi ap'
+                        labelMustaksi lv'
+                        labelMustaksi jm'
+                        labelMustaksi mm'
+                        kerho <- (readIORef valittuKerho)
                         modifyIORef valittuKerho (muokkaaJasen  (Jasen  (Just nimi) 
                                                                         (Just hetu)
                                                                         (Just katu)
@@ -72,20 +87,28 @@ muokkaaJasenCallback n' h' k' pn' po' kp' tp' ap' lv' jm' mm' l' selain b' = do
                                                                         (Just (read (T.unpack jasenM) :: Double))
                                                                         (Just (read (T.unpack maksettuM) :: Double))
                                                                         (Just lisa)
-                                                                        [])
+                                                                        (harrastukset ((jasenet kerho) !! (lineNumberToInt line))))
                                                                 (lineNumberToInt line))
                         remove selain line
                         insert selain line nimi
                         sort selain
                         modifyIORef valittuKerho sortKerho
 
+--Tarkistaa onko kenttään annettu arvo, mahdollisesti lisätään parametriksi funktio, jota käytetään arvon tarkastukseen
 virheet :: Ref Input -> IO ()
 virheet input = do 
                     arvo <- getValue input
                     case arvo of
-                        ""  -> do setLabel input "Kenttä ei täytetty"
+                        ""  -> do   setLabelcolor input redColor
+                                    redraw input
                         _   -> do return ()
---
+
+-- Apufunktio, joka muuttaa labelin värin mustaksi                  
+labelMustaksi :: Ref Input -> IO ()
+labelMustaksi input = do
+                        setLabelcolor input blackColor
+                        redraw input --Jostain syystä tämäkään redraw ei toimi
+-- TODO: jäsenten etsimiseen käytettävä funktio
 --hakuCallback :: Ref SelectBrowser -> Ref Choice -> Ref Input -> IO ()
 --hakuCallback selain valitsin haku = do
 --    case valitsin of
@@ -101,6 +124,8 @@ virheet input = do
 --        "Jäsenmaksu"        -> do
 --        "Maksettu maksu"    -> do
 --        "Lisätietoja"       -> do
+
+-- Testaamaton jäsenenpoistofunktio
 poistaJasenCallback :: Ref SelectBrowser -> Ref MenuItemBase -> IO () -- MenuItemBase
 poistaJasenCallback selain b' = do
     line <- getValue selain
@@ -110,12 +135,12 @@ poistaJasenCallback selain b' = do
         else do
             modifyIORef valittuKerho (poistaJasen (lineNumberToInt line))
             remove selain line
-    
-valitseJasenCallback :: Ref Input -> Ref Input -> Ref Input -> Ref Input -> Ref Input -> Ref Input -> Ref Input -> Ref Input -> Ref Input -> Ref Input -> Ref Input -> Ref Input -> Ref SelectBrowser -> IO ()
-valitseJasenCallback n' h' k' pn' po' kp' tp' ap' lv' jm' mm' l' selain = do
+
+-- Valitsemalla jäsen listasta päivittää tiedonlisäyskentät sekä harrastustaulukon
+valitseJasenCallback :: Ref Input -> Ref Input -> Ref Input -> Ref Input -> Ref Input -> Ref Input -> Ref Input -> Ref Input -> Ref Input -> Ref Input -> Ref Input -> Ref Input -> Ref TableRow -> Ref SelectBrowser -> IO ()
+valitseJasenCallback n' h' k' pn' po' kp' tp' ap' lv' jm' mm' l' table selain = do
     line <- getValue selain
     sisalla <- displayed selain line
-    --indeksi <- getValue selain
     case sisalla of
         False  -> return ()
         True   -> do 
@@ -167,13 +192,76 @@ valitseJasenCallback n' h' k' pn' po' kp' tp' ap' lv' jm' mm' l' selain = do
                 setValue l' (case lisatieto ((jasenet kerho) !!  (lineNumberToInt line)) of
                                     Just x  -> x
                                     _       -> T.pack "")
+                                    
+                writeIORef rowData (jasenenHarrastukset ((jasenet kerho) !!  (lineNumberToInt line)))
+                readIORef rowData >>= setRows table . Rows . length
+                redraw table --Tämä redraw toimii 
                 return ()
 
+-- Muutetaan jäsenen harrastuksien tiedot muotoon jossa ne voidaan laittaa esille taulukkoon
+jasenenHarrastukset :: Jasen -> [[T.Text]]
+jasenenHarrastukset (Jasen _ _ _ _ _ _ _ _ _ _ _ _ []) = [[(T.pack ""), (T.pack ""), (T.pack "")]]
+jasenenHarrastukset (Jasen _ _ _ _ _ _ _ _ _ _ _ _ xs) = map jasenenHarrastuksetApu xs
 
-                
+-- Yksittäisen harrastuksen muuttaminen tekstiksi
+jasenenHarrastuksetApu :: Harrastus -> [T.Text]
+jasenenHarrastuksetApu harrastus = case ((laji harrastus), (aloitusvuosi harrastus), (tuntiaViikossa harrastus)) of
+                                            (Nothing, Nothing, Nothing)     -> [(T.pack ""),(T.pack ""),(T.pack "")]
+                                            ((Just a), Nothing, Nothing)    -> [a,(T.pack ""),(T.pack "")]
+                                            (Nothing, (Just b), Nothing)    -> [(T.pack ""), (T.pack (show b)), (T.pack "")]
+                                            (Nothing, Nothing, (Just c))    -> [(T.pack ""), (T.pack ""), (T.pack (show c))]
+                                            ((Just a), (Just b), Nothing)   -> [a,(T.pack (show b)), (T.pack "")]
+                                            ((Just a), Nothing, (Just c))   -> [a,(T.pack ""), (T.pack (show c))]
+                                            (Nothing, (Just b), (Just c))   -> [(T.pack ""), (T.pack (show b)), (T.pack (show c))]
+                                            ((Just a), (Just b), (Just c))  -> [a, (T.pack (show b)), (T.pack (show c))]
+
+-- Luodaan ikkuna jonka avulla käyttäjä voi lisätä uuden harrastuksen
+lisaaHarrastusCallback :: Ref TableRow -> Ref SelectBrowser -> Ref Button -> IO ()
+lisaaHarrastusCallback table selain b = do
+                                    w <- windowNew (toSize (400,200)) Nothing (Just "Lisää harrastus")
+                                    begin w
+                                    b <-    buttonNew
+                                            (Rectangle (Position (X 140) (Y 160)) (Size (Width 120) (Height 30)))
+                                            (Just "Lisää harrastus")
+                                    iLaji       <- inputNew (toRectangle (100,30,250,25)) (Just "Harrastus") (Just FlNormalInput)
+                                    iAloitus    <- inputNew (toRectangle (100,60,250,25)) (Just "Aloitusvuosi") (Just FlIntInput)
+                                    iTuntia     <- inputNew (toRectangle (100,90,250,25)) (Just "Tuntia viikossa") (Just FlFloatInput)
+                                    arvo        <- getValue selain
+                                    setCallback b (lisaaHarrastusApuCallback iLaji iAloitus iTuntia (lineNumberToInt arvo) table w selain)
+                                    end w
+                                    showWidget w
+                                    
+                                    
+-- Callback harrastuksen lisäämisestä avautuvaan ikkunaan
+lisaaHarrastusApuCallback :: Ref Input -> Ref Input -> Ref Input -> Int -> Ref TableRow -> Ref Window -> Ref SelectBrowser -> Ref Button -> IO ()
+lisaaHarrastusApuCallback laj aloitus tuntia i table window selain b = do
+                                                                    l <- getValue laj
+                                                                    a <- getValue aloitus
+                                                                    t <- getValue tuntia
+                                                                    kerho <- readIORef valittuKerho
+                                                                    modifyIORef valittuKerho (muokkaaJasen (lisaaHarrastus (Harrastus (Just l) (Just (read (T.unpack a))) (Just (read (T.unpack t)))) ((jasenet kerho) !! i)) i)
+                                                                    writeIORef rowData (jasenenHarrastukset ((jasenet kerho) !!  i))
+                                                                    readIORef rowData >>= setRows table . Rows . length
+                                                                    hide window
+                                                                    redraw table --Jostain syystä ei toimi, jäsen valittava uudestaan jotta taulukko päivittyy
+
+                                                                    
+
+-- Muutetaan listan linenumber vastaamaan tietorakenteessa kyseisen henkilön indeksiä
 lineNumberToInt :: LineNumber -> Int
 lineNumberToInt (LineNumber x) = (read (show x)) - 1
+-- TODO poistofunktiot
+--poistaHarrastusCallback :: Ref TableRow -> Ref Button -> IO ()
+--poistaHarrastusCallback taulu b = do
 
+--harrastusCallback :: Ref TableRow -> Ref Button -> IO ()
+--harrastusCallback taulu b = do
+--                                    if getLabel b == "Lisää harrastus"
+--                                    then do harrastusIkkuna getValue taulu
+--                                            
+--                                    else do harrastusIkkuna []
+
+-- Lisätään uusi jäsen oletusarvoilla tietorakenteeseen, sekä päivitetään jäsenlistaa
 lisaaJasenCallback :: Ref SelectBrowser -> Ref Button -> IO ()
 lisaaJasenCallback selain button = do
     modifyIORef valittuKerho (lisaaJasen (Jasen (Just (T.pack "uusi jäsen")) 
@@ -192,3 +280,206 @@ lisaaJasenCallback selain button = do
     add selain ("uusi jäsen")
     sort selain
     modifyIORef valittuKerho sortKerho
+
+{----------------------------------------------------------------------------------------------------------------
+Tämän viivan alapuolella oleva koodi käsittelee harrastustaulukkoa. Kyseinen koodi on otettu lähes suoraan pienin 
+muutoksin fltkhs demosta "fltkhs-table-sort"
+-----------------------------------------------------------------------------------------------------------------}
+headers :: [T.Text]
+headers = map T.pack ["Harrastus", "aloitusvuosi", "tuntia vko"]
+
+rowFontFace :: Font
+rowFontFace = helvetica
+
+rowFontSize :: FontSize
+rowFontSize = FontSize 16
+
+margin :: Int
+margin = 20
+
+headerFontFace :: Font
+headerFontFace = helveticaBold
+headerFontSize :: FontSize
+headerFontSize = FontSize 16
+
+rowData :: IORef [[T.Text]]
+rowData = unsafePerformIO $ newIORef ([["","",""]])
+
+sortRev :: IORef Bool
+sortRev = unsafePerformIO $ newIORef False
+
+sortLast :: IORef Int
+sortLast = unsafePerformIO $ newIORef (-1)
+
+tableState :: TableState
+tableState = TableState sortRev sortLast rowData
+
+data TableState = TableState {
+  sortReverse :: IORef Bool,
+  sortLastCol :: IORef Int,
+  row :: IORef [[T.Text]]
+  }
+
+eventCallback :: TableState -> Ref TableRow -> IO ()
+eventCallback tableState table = do
+  (Column  col') <- callbackCol table
+  context' <- callbackContext table
+  case context' of
+   ContextColHeader -> do
+     event' <- FL.event
+     mouseButton' <- FL.eventButton
+     case mouseButton' of
+       Nothing -> return ()
+       Just mb' -> if (event' == Release && mb' == Mouse_Left)
+                   then do
+                     sortLastCol' <- readIORef (sortLastCol tableState)
+                     if (sortLastCol' == col')
+                       then readIORef (sortReverse tableState) >>= writeIORef (sortReverse tableState) . toggle
+                       else writeIORef (sortReverse tableState) False
+                     sortReverse' <- readIORef (sortReverse tableState)
+                     rowData <- readIORef (row tableState) >>= return . zip [(0 :: Int)..]
+                     let sorted = sortBy (compare `on` (indexOr "" col'. snd)) rowData
+                     writeIORef
+                       (row tableState)
+                       (if sortReverse'
+                        then (reverse $ map snd sorted)
+                        else map snd sorted)
+                     writeIORef (sortLastCol tableState) col'
+                     redraw table
+                     else return ()
+   _ -> return ()
+  where toggle True = False
+        toggle False = True
+
+drawSortArrow :: Rectangle -> Bool -> IO ()
+drawSortArrow (Rectangle (Position (X x') (Y y')) (Size (Width w') (Height h'))) sortReverse' =
+  let xlft = x' + (w'-6) - 8
+      xctr = x' + (w'-6) - 4
+      xrit = x' + (w'-6) - 0
+      ytop = y' + (truncate ((fromIntegral h' / 2) :: Double)) - 4
+      ybot = y' + (truncate ((fromIntegral h' / 2) :: Double)) + 4
+  in
+   if sortReverse'
+   then do
+     flcSetColor whiteColor
+     flcLine (Position (X xrit) (Y ytop)) (Position (X xctr) (Y ybot))
+     flcSetColor (Color 41)
+     flcLine (Position (X xlft) (Y ytop)) (Position (X xrit) (Y ytop))
+     flcLine (Position (X xlft) (Y ytop)) (Position (X xctr) (Y ybot))
+   else do
+     flcSetColor whiteColor
+     flcLine (Position (X xrit) (Y ybot)) (Position (X xctr) (Y ybot))
+     flcLine (Position (X xrit) (Y ybot)) (Position (X xlft) (Y ybot))
+     flcSetColor (Color 41)
+     flcLine (Position (X xlft) (Y ybot)) (Position (X xctr) (Y ytop))
+
+setIndex :: Int -> [a] -> (a -> a) -> [a]
+setIndex idx' xs f =
+  map
+   (
+    \(i,e) -> if (i == idx')
+                 then f e
+                 else e
+   )
+   (zip [0..] xs)
+
+indexOr :: a -> Int -> [a] -> a
+indexOr fallback idx xs =
+  if (idx < length xs)
+  then xs !! idx
+  else fallback
+
+drawCell ::  TableState -> Ref TableRow -> TableContext -> TableCoordinate -> Rectangle -> IO ()
+drawCell tableState table tc (TableCoordinate (Row row') (Column col')) rectangle' =
+  let (x',y',w',h') = fromRectangle rectangle'
+  in do
+    sortReverse' <- readIORef (sortReverse tableState)
+    sortLastCol' <- readIORef (sortLastCol tableState)
+    rowData <- readIORef (row tableState)
+    (Columns numCols) <- getCols table
+    (Rows numRows) <- getRows table
+    if (row' < numRows && col' < numCols)
+      then case tc of
+            ContextColHeader -> do
+              flcPushClip rectangle'
+              flcDrawBox ThinUpBox rectangle' backgroundColor
+              if (col' < 9)
+                then do
+                  flcSetColor blackColor
+                  flcDrawInBox
+                    (headers !! col')
+                    (toRectangle ((x'+2),y',w',h'))
+                    alignLeft
+                    Nothing
+                    Nothing
+                  if (col' == sortLastCol')
+                    then drawSortArrow rectangle' sortReverse'
+                    else return ()
+                else return ()
+              flcPopClip
+            ContextCell -> do
+              flcPushClip rectangle'
+              bgColor <- do
+                isSelected' <- getRowSelected table (Row row')
+                case isSelected' of
+                  Right is' -> if is'
+                               then getSelectionColor table
+                               else return whiteColor
+                  Left _ -> error $ "Row: " ++ (show row') ++ " is out of range."
+              flcSetColor bgColor
+              flcRectf rectangle'
+              flcSetFont rowFontFace rowFontSize
+              flcSetColor blackColor
+              let currentRow = rowData !! row'
+              flcDrawInBox
+                (indexOr "" col' currentRow)
+                (toRectangle $ (x'+2,y',w',h'))
+                alignLeft
+                Nothing
+                Nothing
+              flcSetColor light2Color
+              flcRect rectangle'
+              flcPopClip
+            _ -> return ()
+      else return ()
+
+autowidth :: Ref TableRow -> Int -> [[T.Text]] -> IO ()
+autowidth table pad rowData' = do
+  flcSetFont headerFontFace headerFontSize
+  mapM_
+    (\(colNum, colName) -> do
+        (Size (Width w') _) <- flcMeasure colName Nothing True
+        setColWidth table (Column colNum) (w' + pad)
+    )
+    (zip [0 ..] headers)
+  flcSetFont rowFontFace rowFontSize
+  mapM_
+    (\row' -> do
+      mapM_
+        (\(colIdx,col) -> do
+            (Size (Width wc') _) <- flcMeasure col Nothing True
+            colWidth' <- getColWidth table (Column colIdx)
+            if (wc' + pad > colWidth')
+              then setColWidth table (Column colIdx) (wc' + pad)
+              else return ()
+        )
+        (zip [0..] row')
+    )
+    rowData'
+  -- need to do { table_resized(); redraw(); }
+  -- but table_resized() is unexposed.
+  -- setting the row_header flag induces this.
+  getRowHeader table >>= setRowHeader table
+
+resize_window :: Ref DoubleWindow -> Ref TableRow -> IO ()
+resize_window window table = do
+  let width = (4 :: Int)
+  (Columns numCols) <- getCols table
+  colWidthTotal <- liftM sum $ mapM (getColWidth table . Column) [0..(numCols - 1)]
+  let totalWidth = width + colWidthTotal + (margin * 2)
+  appWidth <- FL.w
+  if (totalWidth < 200 || totalWidth > appWidth)
+    then return ()
+    else do
+      (x', y', h', _) <- fmap fromRectangle (getRectangle window)
+      resize window $ toRectangle (x',y',totalWidth,h')
