@@ -90,10 +90,8 @@ muokkaaJasenApu uudettiedot paikka (x:xs)   = case paikka of
 jasenTekstiksi :: Show a => Jasen -> (Jasen -> Maybe a) -> T.Text
 jasenTekstiksi jasen f = case f jasen of
                             Nothing ->  T.pack " "
-                            Just x  ->  T.pack (show x) --case x of
-                                        --  -> x
-                                        --_           -> T.pack (show x)
-
+                            Just x  ->  T.pack (show x)
+                            
 -- Lisätään harrastus jäsenelle
 lisaaHarrastus :: Harrastus -> Jasen -> Jasen
 lisaaHarrastus harrastus jasen = Jasen (nimi jasen) (hetu jasen) (katuosoite jasen) (postinumero jasen) (postiosoite jasen) (kotipuhelin jasen) (tyopuhelin jasen) (autopuhelin jasen) (liittymisvuosi jasen) (jasenmaksu jasen) (maksettu jasen) (lisatieto jasen) ((harrastukset jasen) ++ [harrastus])

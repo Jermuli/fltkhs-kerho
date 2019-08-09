@@ -112,21 +112,36 @@ labelMustaksi input = do
 --hakuCallback :: Ref SelectBrowser -> Ref Choice -> Ref Input -> IO ()
 --hakuCallback selain valitsin haku = do
 --    case valitsin of
---        "Nimi"              -> do
---        "Hetu"              -> do
---        "Katuosoite"        -> do
---        "Postinumero"       -> do
---        "Postiosoite"       -> do
---        "Kotipuhelin"       -> do
---        "Työpuhelin"        -> do
---        "Autopuhelin"       -> do
---        "Liittymisvuosi"    -> do
---        "Jäsenmaksu"        -> do
---        "Maksettu maksu"    -> do
---        "Lisätietoja"       -> do
-
+--        "Nimi"              -> do hakuCallbackApu selain valitsin nimi
+--        "Hetu"              -> do hakuCallbackApu selain valitsin hetu
+--        "Katuosoite"        -> do hakuCallbackApu selain valitsin katuosoite
+--        "Postinumero"       -> do hakuCallbackApu selain valitsin postinumero
+--        "Postiosoite"       -> do hakuCallbackApu selain valitsin postiosoite
+--        "Kotipuhelin"       -> do hakuCallbackApu selain valitsin kotipuhelin
+--        "Työpuhelin"        -> do hakuCallbackApu selain valitsin tyopuhelin
+--        "Autopuhelin"       -> do hakuCallbackApu selain valitsin autopuhelin
+--        "Liittymisvuosi"    -> do hakuCallbackApu selain valitsin liittymisvuosi
+--        "Jäsenmaksu"        -> do hakuCallbackApu selain valitsin jasenmaksu
+--        "Maksettu maksu"    -> do hakuCallbackApu selain valitsin maksettu
+--        "Lisätietoja"       -> do hakuCallbackApu selain valitsin lisatieto
+--
+--hakuCallbackApu :: Ref SelectBrowser -> Ref Input -> (Jasen -> Maybe T.Text) -> IO ()
+--hakuCallbackApu selain haku kriteeri = do
+--                                        sana <- getValue haku
+--                                          if (sana == "")
+--                                          then return ()
+--                                          else
+--                                          map (\x -> sana == (kriteeri . ((!!) x) . jasenet valittukerho)) [1 .. getSize]
+--                                        
+--haku :: Ref SelectBrowser -> T.Text -> LineNumber -> IO ()
+--haku selain haku i = do
+--                        rivi <- getText selain i
+--                        if (haku == rivi) 
+--                        then return ()
+--                        else 
+--                            hideLine selain i
 -- Testaamaton jäsenenpoistofunktio
-poistaJasenCallback :: Ref SelectBrowser -> Ref MenuItemBase -> IO () -- MenuItemBase
+poistaJasenCallback :: Ref SelectBrowser -> Ref Button -> IO () -- MenuItemBase
 poistaJasenCallback selain b' = do
     line <- getValue selain
     sisalla <- displayed selain line
@@ -136,6 +151,7 @@ poistaJasenCallback selain b' = do
             modifyIORef valittuKerho (poistaJasen (lineNumberToInt line))
             remove selain line
 
+
 -- Valitsemalla jäsen listasta päivittää tiedonlisäyskentät sekä harrastustaulukon
 valitseJasenCallback :: Ref Input -> Ref Input -> Ref Input -> Ref Input -> Ref Input -> Ref Input -> Ref Input -> Ref Input -> Ref Input -> Ref Input -> Ref Input -> Ref Input -> Ref TableRow -> Ref SelectBrowser -> IO ()
 valitseJasenCallback n' h' k' pn' po' kp' tp' ap' lv' jm' mm' l' table selain = do
@@ -144,17 +160,17 @@ valitseJasenCallback n' h' k' pn' po' kp' tp' ap' lv' jm' mm' l' table selain = 
     case sisalla of
         False  -> return ()
         True   -> do 
-                setLabel h' "Hetu"
-                setLabel n' "Nimi"
-                setLabel k' "Katuosoite"
-                setLabel pn' "Postinumero"
-                setLabel po' "Postiosoite"
-                setLabel kp' "Kotipuhelin"
-                setLabel tp' "Työpuhelin"
-                setLabel ap' "Autopuhelin"
-                setLabel lv' "Liittymisvuosi"
-                setLabel jm' "Jäsenmaksu"
-                setLabel mm' "Maksettu maksu"
+                labelMustaksi h' 
+                labelMustaksi n' 
+                labelMustaksi k' 
+                labelMustaksi pn'
+                labelMustaksi po'
+                labelMustaksi kp'
+                labelMustaksi tp'
+                labelMustaksi ap'
+                labelMustaksi lv'
+                labelMustaksi jm'
+                labelMustaksi mm'
                 kerho   <- (readIORef valittuKerho)
                 setValue n' (case nimi ((jasenet kerho) !!  (lineNumberToInt line)) of --jasenTekstiksi nimi ((jasenet kerho) !! (lineNumberToInt line)) 
                                     Just x  -> x
@@ -195,6 +211,8 @@ valitseJasenCallback n' h' k' pn' po' kp' tp' ap' lv' jm' mm' l' table selain = 
                                     
                 writeIORef rowData (jasenenHarrastukset ((jasenet kerho) !!  (lineNumberToInt line)))
                 readIORef rowData >>= setRows table . Rows . length
+                writeIORef sortRev False
+                writeIORef sortLast (-1)
                 redraw table --Tämä redraw toimii 
                 return ()
 
@@ -218,49 +236,66 @@ jasenenHarrastuksetApu harrastus = case ((laji harrastus), (aloitusvuosi harrast
 -- Luodaan ikkuna jonka avulla käyttäjä voi lisätä uuden harrastuksen
 lisaaHarrastusCallback :: Ref TableRow -> Ref SelectBrowser -> Ref Button -> IO ()
 lisaaHarrastusCallback table selain b = do
-                                    w <- windowNew (toSize (400,200)) Nothing (Just "Lisää harrastus")
-                                    begin w
-                                    b <-    buttonNew
-                                            (Rectangle (Position (X 140) (Y 160)) (Size (Width 120) (Height 30)))
-                                            (Just "Lisää harrastus")
-                                    iLaji       <- inputNew (toRectangle (100,30,250,25)) (Just "Harrastus") (Just FlNormalInput)
-                                    iAloitus    <- inputNew (toRectangle (100,60,250,25)) (Just "Aloitusvuosi") (Just FlIntInput)
-                                    iTuntia     <- inputNew (toRectangle (100,90,250,25)) (Just "Tuntia viikossa") (Just FlFloatInput)
-                                    arvo        <- getValue selain
-                                    setCallback b (lisaaHarrastusApuCallback iLaji iAloitus iTuntia (lineNumberToInt arvo) table w selain)
-                                    end w
-                                    showWidget w
+                                    line <- getValue selain
+                                    sisalla <- displayed selain line
+                                    if not sisalla
+                                        then do return ()
+                                        else do
+                                            w <- windowNew (toSize (400,200)) Nothing (Just "Lisää harrastus")
+                                            begin w
+                                            b <-    buttonNew
+                                                    (Rectangle (Position (X 140) (Y 160)) (Size (Width 120) (Height 30)))
+                                                    (Just "Lisää harrastus")
+                                            iLaji       <- inputNew (toRectangle (100,30,250,25)) (Just "Harrastus") (Just FlNormalInput)
+                                            iAloitus    <- inputNew (toRectangle (100,60,250,25)) (Just "Aloitusvuosi") (Just FlIntInput)
+                                            iTuntia     <- inputNew (toRectangle (100,90,250,25)) (Just "Tuntia viikossa") (Just FlFloatInput)
+                                            arvo        <- getValue selain
+                                            setCallback b (lisaaHarrastusApuCallback iLaji iAloitus iTuntia (lineNumberToInt arvo) table w selain)
+                                            end w
+                                            showWidget w
                                     
                                     
 -- Callback harrastuksen lisäämisestä avautuvaan ikkunaan
 lisaaHarrastusApuCallback :: Ref Input -> Ref Input -> Ref Input -> Int -> Ref TableRow -> Ref Window -> Ref SelectBrowser -> Ref Button -> IO ()
 lisaaHarrastusApuCallback laj aloitus tuntia i table window selain b = do
-                                                                    l <- getValue laj
-                                                                    a <- getValue aloitus
-                                                                    t <- getValue tuntia
-                                                                    kerho <- readIORef valittuKerho
-                                                                    modifyIORef valittuKerho (muokkaaJasen (lisaaHarrastus (Harrastus (Just l) (Just (read (T.unpack a))) (Just (read (T.unpack t)))) ((jasenet kerho) !! i)) i)
-                                                                    writeIORef rowData (jasenenHarrastukset ((jasenet kerho) !!  i))
-                                                                    readIORef rowData >>= setRows table . Rows . length
-                                                                    hide window
-                                                                    redraw table --Jostain syystä ei toimi, jäsen valittava uudestaan jotta taulukko päivittyy
+                                                                    line <- getValue selain
+                                                                    sisalla <- displayed selain line
+                                                                    if not sisalla
+                                                                        then do return ()
+                                                                        else do
+                                                                            l <- getValue laj
+                                                                            a <- getValue aloitus
+                                                                            t <- getValue tuntia
+                                                                            kerho <- readIORef valittuKerho
+                                                                            modifyIORef valittuKerho (muokkaaJasen (lisaaHarrastus (Harrastus (Just l) (Just (read (T.unpack a))) (Just (read (T.unpack t)))) ((jasenet kerho) !! i)) i)
+                                                                            writeIORef rowData (jasenenHarrastukset ((jasenet kerho) !!  i))
+                                                                            readIORef rowData >>= setRows table . Rows . length
+                                                                            hide window
+                                                                            redraw table --Jostain syystä ei toimi, jäsen valittava uudestaan jotta taulukko päivittyy
 
                                                                     
 
 -- Muutetaan listan linenumber vastaamaan tietorakenteessa kyseisen henkilön indeksiä
 lineNumberToInt :: LineNumber -> Int
 lineNumberToInt (LineNumber x) = (read (show x)) - 1
--- TODO poistofunktiot
---poistaHarrastusCallback :: Ref TableRow -> Ref Button -> IO ()
---poistaHarrastusCallback taulu b = do
+--
+tcToInt :: TableCoordinate -> Int
+tcToInt (TableCoordinate (Row x) y) = (read (show x))
 
---harrastusCallback :: Ref TableRow -> Ref Button -> IO ()
---harrastusCallback taulu b = do
---                                    if getLabel b == "Lisää harrastus"
---                                    then do harrastusIkkuna getValue taulu
---                                            
---                                    else do harrastusIkkuna []
-
+poistaHarrastusCallback :: Ref SelectBrowser -> Ref TableRow -> Ref Button -> IO ()
+poistaHarrastusCallback selain taulu b = do
+                                    rivi <- getSelection taulu
+                                    tiedot <- readIORef rowData
+                                    line <- getValue selain
+                                    kerho <- readIORef valittuKerho
+                                    let currentRow = tiedot !! (tcToInt (fst rivi))
+                                    modifyIORef valittuKerho (muokkaaJasen (poistaHarrastus (Harrastus (Just (currentRow !! 0)) (Just (read (T.unpack(currentRow !! 1)))) (Just (read (T.unpack(currentRow !! 2))))) ((jasenet kerho) !! (lineNumberToInt line))) (lineNumberToInt line)) 
+                                    writeIORef rowData (jasenenHarrastukset ((jasenet kerho) !!  (lineNumberToInt line)))
+                                    readIORef rowData >>= setRows taulu . Rows . length
+                                    writeIORef sortRev False
+                                    writeIORef sortLast (-1)
+                                    redraw taulu
+--
 -- Lisätään uusi jäsen oletusarvoilla tietorakenteeseen, sekä päivitetään jäsenlistaa
 lisaaJasenCallback :: Ref SelectBrowser -> Ref Button -> IO ()
 lisaaJasenCallback selain button = do

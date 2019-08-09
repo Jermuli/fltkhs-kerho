@@ -14,10 +14,10 @@ decl {import Data.IORef} {private local
 Function {makeWindow(IO(Ref Window))} {open
 } {
   Fl_Window paaIkkuna {open
-    xywh {35 125 840 496} type Double visible
+    xywh {35 125 880 496} type Double visible
   } {
     Fl_Menu_Bar ylaMenu {open
-      xywh {0 0 840 20}
+      xywh {0 0 930 20}
     } {
       Submenu tiedosto {
         label Tiedosto
@@ -41,7 +41,7 @@ Function {makeWindow(IO(Ref Window))} {open
         }
       }
       Submenu muokkaa {
-        label Muokkaa open
+        label Muokkaa
         xywh {0 0 62 20} divider
       } {
         MenuItem uusiJasenSub {
@@ -84,7 +84,7 @@ Function {makeWindow(IO(Ref Window))} {open
       }
     }
     Fl_Group jasenGroup {open
-      xywh {5 25 170 470}
+      xywh {5 25 455 470}
     } {
       Fl_Input hakuKentta {
         label {input:}
@@ -145,24 +145,28 @@ Function {makeWindow(IO(Ref Window))} {open
       }
       Fl_Button uusiJasen {
         label {Uusi jäsen}
-        xywh {15 475 85 20}
+        xywh {5 465 70 20}
       }
       Fl_Button tallenna {
-        label Tallenna
-        xywh {105 475 70 20}
+        label {Tallenna jäsenen tiedot}
+        xywh {285 465 170 20}
+      }
+      Fl_Button poistaJasen {
+        label {Poista jäsen}
+        xywh {80 465 85 20}
       }
     }
     Fl_Group harrastusGroup {
       label {Jäsenen harrastukset} open
-      xywh {575 40 260 450}
+      xywh {545 40 365 450}
     } {
       Fl_Button lisaaHarrastus {
         label {Lisää harrastus}
-        xywh {575 460 124 20}
+        xywh {550 465 149 20}
       }
       Fl_Button poistaHarrastus {
         label {Poista Harrastus}
-        xywh {710 460 125 20}
+        xywh {705 465 145 20}
       }
     }
     Fl_Group jasenTietoGroup {
@@ -232,13 +236,13 @@ setInputType jasenmaksuInput FlFloatInput;
 
 setCallback tallenna (muokkaaJasenCallback nimiInput hetuInput katuosoiteInput postinmrInput postiosoiteInput kotipuhelinInput tyopuhelinInput autopuhelinInput liittymisvuosiInput jasenmaksuInput maksettuMaksuInput lisatietoInput jasenSelain);
 setCallback uusiJasen (lisaaJasenCallback jasenSelain);
-setCallback poistaJasenSub (poistaJasenCallback jasenSelain);
+setCallback poistaJasen (poistaJasenCallback jasenSelain);
 
 
 
 
 
-harrastusTable <- tableRowNew (Rectangle(Position (X 550) (Y 40)) (Size (Width 275) (Height 415))) Nothing Nothing (drawCell tableState) defaultCustomWidgetFuncs defaultCustomTableFuncs;
+harrastusTable <- tableRowNew (Rectangle(Position (X 550) (Y 40)) (Size (Width 300) (Height 415))) Nothing Nothing (drawCell tableState) defaultCustomWidgetFuncs defaultCustomTableFuncs;
 setColHeader harrastusTable True;
 setColResize harrastusTable True;
 setSelectionColor harrastusTable blueColor;
@@ -251,6 +255,7 @@ readIORef rowData >>= autowidth harrastusTable 20;
 setColor harrastusTable whiteColor;
 setCallback harrastusTable (eventCallback tableState);
 
+setCallback poistaHarrastus (poistaHarrastusCallback jasenSelain harrastusTable);
 setCallback jasenSelain (valitseJasenCallback nimiInput hetuInput katuosoiteInput postinmrInput postiosoiteInput kotipuhelinInput tyopuhelinInput autopuhelinInput liittymisvuosiInput jasenmaksuInput maksettuMaksuInput lisatietoInput harrastusTable);
 setCallback lisaaHarrastus (lisaaHarrastusCallback harrastusTable jasenSelain);} {selected
   }
