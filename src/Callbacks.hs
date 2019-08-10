@@ -10,9 +10,11 @@ import Graphics.UI.FLTK.LowLevel.Fl_Types
 import Graphics.UI.FLTK.LowLevel.Fl_Enumerations
 import Graphics.UI.FLTK.LowLevel.FLTKHS
 import Data.IORef
+import Text.Read
 import Control.Monad
 import System.IO.Unsafe
 import qualified Data.Text as T
+import qualified Data.Text.IO as TIO
 import Data.List hiding (sort, insert)
 import Data.Function
 
@@ -173,6 +175,141 @@ haetutRivitApu selain lista = do
                                                                 add selain x
                                     (_, False)          -> do
                                                                 return ()
+
+vaihdaKerhonNimiCallback :: Ref Button -> IO ()
+vaihdaKerhonNimiCallback b = do
+                                w <- windowNew (toSize (300,100)) Nothing (Just "Vaihda kerhon nimeä")
+                                begin w
+                                b <-    buttonNew
+                                        (Rectangle (Position (X 100) (Y 65)) (Size (Width 100) (Height 30)))
+                                        (Just "Vaihda kerhon Nimi")
+                                iKohde       <- inputNew (toRectangle (100,30,190,25)) (Just "Kerhon nimi") (Just FlNormalInput)
+                                setCallback b (vaihdaKerhonNimi iKohde w)
+                                end w
+                                showWidget w
+vaihdaKerhonNimi :: Ref Input -> Ref Window -> Ref Button -> IO ()
+vaihdaKerhonNimi input w b = do
+                                uusiNimi <- getValue input
+                                case uusiNimi of
+                                    ""  -> do return ()
+                                    x   -> do   
+                                                kerho <- readIORef valittuKerho
+                                                modifyIORef valittuKerho (vaihdaKerhonNimea uusiNimi)
+                                                hide w
+tallennaKerho :: Ref Button -> IO ()
+tallennaKerho b = do
+                kerho <- readIORef valittuKerho
+                --TIO.writeFile "testi.dat" (tallennaJasenet (jasenet kerho))
+                case kerhonNimi kerho of
+                    Nothing     -> do return ()
+                    Just x      -> do 
+                                        TIO.writeFile ((T.unpack x) ++ ".dat") (tallennaJasenet (jasenet kerho))
+                                        TIO.writeFile ((T.unpack x) ++ ".har") (tallennaHarrastukset (jasenet kerho))
+tallennaJasenet :: [Jasen] -> T.Text
+tallennaJasenet joukko = T.concat (map tiedotTekstiksi joukko)
+
+tiedotTekstiksi :: Jasen -> T.Text
+tiedotTekstiksi jasen = T.append    (T.concat ([(T.append (mbyToText (nimi jasen)) "||"), 
+                                                (T.append (mbyToText (hetu jasen)) "||"), 
+                                                (T.append (mbyToText (katuosoite jasen)) "||"), 
+                                                (T.append (mbyNumToText (postinumero jasen)) "||"), 
+                                                (T.append (mbyToText (postiosoite jasen)) "||"), 
+                                                (T.append (mbyNumToText (kotipuhelin jasen)) "||"), 
+                                                (T.append (mbyNumToText (tyopuhelin jasen)) "||"), 
+                                                (T.append (mbyNumToText (autopuhelin jasen)) "||"), 
+                                                (T.append (mbyNumToText (liittymisvuosi jasen)) "||"), 
+                                                (T.append (mbyNumToText (jasenmaksu jasen)) "||"), 
+                                                (T.append (mbyNumToText (maksettu jasen)) "||"), 
+                                                (T.append (mbyToText (lisatieto jasen)) "||")]))
+                                    (T.pack "\n")
+
+tallennaHarrastukset :: [Jasen] -> T.Text
+tallennaHarrastukset joukko = T.concat (map jasenenHarrastuksetTekstiksi (zip [0..((length joukko) - 1)] joukko))
+--
+jasenenHarrastuksetTekstiksi :: (Int, Jasen) -> T.Text
+jasenenHarrastuksetTekstiksi (i, jasen) = T.concat (map (harrastusTekstiksi i) (harrastukset jasen))
+
+latausIkkunaCallback :: Ref Button -> IO ()
+latausIkkunaCallback b = do
+                            w <- windowNew (toSize (300,100)) Nothing (Just "Avaa kerho")
+                            begin w
+                            b <-    buttonNew
+                                    (Rectangle (Position (X 125) (Y 65)) (Size (Width 50) (Height 30)))
+                                    (Just "Avaa")
+                            iKohde       <- inputNew (toRectangle (100,30,190,25)) (Just "Kerhon nimi") (Just FlNormalInput)
+                            setCallback b (lataaKerho iKohde)
+                            end w
+                            showWidget w
+
+lataaKerho :: Ref Input -> Ref Button -> IO ()
+lataaKerho input b = do
+                        ladattavanKerhonNimi <- getValue input
+                        jasenTiedostonSisalto <- TIO.readFile ((T.unpack ladattavanKerhonNimi) ++ ".dat")
+                        let kerhonJasenet = map tekstiJaseneksi (T.splitOn "\n" jasenTiedostonSisalto)
+                        harrastusTiedostonSisalto <- TIO.readFile ((T.unpack ladattavanKerhonNimi) ++ ".har")
+                        writeIORef valittuKerho (Kerho (Just ladattavanKerhonNimi) kerhonJasenet)
+                        let kerhonJasenienHarrastukset = map tekstiHarrastukseksi (T.splitOn "\n" harrastusTiedostonSisalto)
+                        jasenetIlmanHarrastuksia <- readIORef valittuKerho
+                        lisaaKerhoonHarrastukset kerhonJasenienHarrastukset (jasenet jasenetIlmanHarrastuksia) 
+
+lisaaKerhoonHarrastukset :: [(Maybe Int, Harrastus)] -> [Jasen] -> IO ()
+lisaaKerhoonHarrastukset harrastukset jasenet = do
+                                                    mapM (kerhonHarrastukset jasenet) harrastukset
+                                                    return ()
+                                                    
+kerhonHarrastukset :: [Jasen] -> (Maybe Int, Harrastus) -> IO ()
+kerhonHarrastukset henkilot (i, harrastus) = do
+                                                case i of 
+                                                    Nothing     -> do return ()
+                                                    Just x      -> do
+                                                                    kerho <- readIORef valittuKerho
+                                                                    modifyIORef valittuKerho (muokkaaJasen (lisaaHarrastus harrastus (henkilot !! x)) x)
+
+-----------------------------------------------------------------------------------------------------------------------------
+tekstiHarrastukseksi :: T.Text -> (Maybe Int, Harrastus)
+tekstiHarrastukseksi teksti = harrastusTekstista (T.splitOn "||" teksti)
+
+harrastusTekstista :: [T.Text] -> (Maybe Int, Harrastus)
+harrastusTekstista teksti = (validoiInt (teksti !! 0), (Harrastus   (validoiTeksti (teksti !! 1))
+                                                                    (validoiInt (teksti !! 2))
+                                                                    (validoiDouble (teksti !! 3))))
+   
+tekstiJaseneksi :: T.Text -> Jasen
+tekstiJaseneksi teksti = jasenTekstista (T.splitOn "||" teksti)
+
+jasenTekstista :: [T.Text] -> Jasen
+jasenTekstista tekstit = Jasen  (validoiTeksti (tekstit !! 0))
+                                (validoiJasenenHetu (tekstit !! 1))
+                                (validoiTeksti (tekstit !! 2))
+                                (validoiInt (tekstit !! 3))
+                                (validoiTeksti (tekstit !! 4))
+                                (validoiInt (tekstit !! 5))
+                                (validoiInt (tekstit !! 6))
+                                (validoiInt (tekstit !! 7))
+                                (validoiInt (tekstit !! 8))
+                                (validoiDouble (tekstit !! 9))
+                                (validoiDouble (tekstit !! 10))
+                                (validoiTeksti (tekstit !! 11))
+                                []
+
+validoiTeksti :: T.Text -> Maybe T.Text
+validoiTeksti teksti = case teksti of
+                                ""  -> Nothing
+                                _   -> Just teksti
+
+validoiJasenenHetu :: T.Text -> Maybe T.Text
+validoiJasenenHetu teksti = case validoiHetu teksti of
+                                    True    -> Just teksti
+                                    _       -> Nothing
+                                
+validoiInt :: T.Text -> Maybe Int
+validoiInt teksti = (readMaybe (T.unpack teksti)) :: Maybe Int
+
+validoiDouble :: T.Text -> Maybe Double
+validoiDouble teksti = (readMaybe (T.unpack teksti)) :: Maybe Double
+
+harrastusTekstiksi :: Int -> Harrastus -> T.Text
+harrastusTekstiksi i harrastus = T.append (T.concat [(T.append (T.pack (show i)) "||"), (T.append (mbyToText (laji harrastus)) "||"), (T.append (mbyNumToText (aloitusvuosi harrastus)) "||"), (T.append (mbyNumToText (tuntiaViikossa harrastus)) "||")]) (T.pack "\n")
 
 vertailu :: T.Text -> T.Text -> Bool
 vertailu a b = T.isInfixOf a b
@@ -372,9 +509,10 @@ lisaaJasenCallback selain button = do
                                                 []))
     
     modifyIORef valittuKerho sortKerho
-    haetutRivit selain
-    nakyvat <- readIORef nakyvatJasenet
+    --hakuCallback selain --Ref SelectBrowser -> Ref Choice -> Ref Input -> IO ()
+    nakyvat <- readIORef nakyvatJasenet 
     writeIORef nakyvatJasenet (nakyvat ++ [True])
+    haetutRivit selain
 
 {----------------------------------------------------------------------------------------------------------------
 Tämän viivan alapuolella oleva koodi käsittelee harrastustaulukkoa. Kyseinen koodi on otettu lähes suoraan pienin 

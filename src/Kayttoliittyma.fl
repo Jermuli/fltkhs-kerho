@@ -14,13 +14,13 @@ decl {import Data.IORef} {private local
 Function {makeWindow(IO(Ref Window))} {open
 } {
   Fl_Window paaIkkuna {open
-    xywh {331 859 880 496} type Double visible
+    xywh {460 337 880 496} type Double visible
   } {
     Fl_Menu_Bar ylaMenu {open
       xywh {0 0 930 20}
     } {
       Submenu tiedosto {
-        label Tiedosto
+        label Tiedosto open
         xywh {0 0 62 20} divider
       } {
         MenuItem tallennaSub {
@@ -41,7 +41,7 @@ Function {makeWindow(IO(Ref Window))} {open
         }
       }
       Submenu muokkaa {
-        label Muokkaa selected
+        label Muokkaa
         xywh {0 0 62 20} divider
       } {
         MenuItem uusiJasenSub {
@@ -84,7 +84,7 @@ Function {makeWindow(IO(Ref Window))} {open
       }
     }
     Fl_Group jasenGroup {open
-      xywh {5 25 455 470} when 1
+      xywh {5 25 479 470} when 1
     } {
       Fl_Input hakuKentta {
         label {input:}
@@ -155,6 +155,18 @@ Function {makeWindow(IO(Ref Window))} {open
         label {Poista jäsen}
         xywh {80 465 85 20}
       }
+      Fl_Button tallennaButton {
+        label Tallenna
+        xywh {165 465 64 20}
+      }
+      Fl_Button avaaButton {
+        label Avaa
+        xywh {230 465 64 20}
+      }
+      Fl_Button kerhonNimiButton {
+        label {Vaihda kerhon nimeä}
+        xywh {305 435 165 20}
+      }
     }
     Fl_Group harrastusGroup {
       label {Jäsenen harrastukset} open
@@ -170,7 +182,7 @@ Function {makeWindow(IO(Ref Window))} {open
       }
     }
     Fl_Group jasenTietoGroup {
-      label {Jäsenen tiedot} open
+      label {Jäsenen tiedot} open selected
       xywh {170 40 400 450}
     } {
       Fl_Input nimiInput {
@@ -258,6 +270,9 @@ setCallback harrastusTable (eventCallback tableState);
 setCallback hakuKentta (hakuCallback jasenSelain hakuValitsin);
 setCallback poistaHarrastus (poistaHarrastusCallback jasenSelain harrastusTable);
 setCallback jasenSelain (valitseJasenCallback nimiInput hetuInput katuosoiteInput postinmrInput postiosoiteInput kotipuhelinInput tyopuhelinInput autopuhelinInput liittymisvuosiInput jasenmaksuInput maksettuMaksuInput lisatietoInput harrastusTable);
-setCallback lisaaHarrastus (lisaaHarrastusCallback harrastusTable jasenSelain);} {}
+setCallback lisaaHarrastus (lisaaHarrastusCallback harrastusTable jasenSelain);
+setCallback tallennaButton (tallennaKerho);
+setCallback avaaButton (latausIkkunaCallback);
+setCallback kerhonNimiButton (vaihdaKerhonNimiCallback);} {}
   code {return paaIkkuna} {}
 }

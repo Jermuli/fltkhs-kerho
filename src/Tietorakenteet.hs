@@ -48,14 +48,8 @@ tarkistaTotuudet (x:xs) = case x == True of
                             True    -> tarkistaTotuudet xs
                             False   -> False
                             
--- TODO
---valittuKerho :: IO T.Text -> IO Kerho
---valittuKerho <- lataaKerho tiedostoNimi  -- = Kerho Nothing []
---return()
-
---valittuJasen :: Jasen
---valittuJasen = Jasen Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing []
---
+vaihdaKerhonNimea ::  T.Text -> Kerho -> Kerho
+vaihdaKerhonNimea uusiNimi klubi = Kerho (Just uusiNimi) (jasenet klubi)
 
 -- Lisää jäsenen kehoon
 lisaaJasen :: Jasen -> Kerho -> Kerho
@@ -99,6 +93,7 @@ lisaaHarrastus harrastus jasen = Jasen (nimi jasen) (hetu jasen) (katuosoite jas
 -- Poistetaan harrastus jäseneltä
 poistaHarrastus :: Harrastus -> Jasen -> Jasen
 poistaHarrastus poistettava jasen = Jasen (nimi jasen) (hetu jasen) (katuosoite jasen) (postinumero jasen) (postiosoite jasen) (kotipuhelin jasen) (tyopuhelin jasen) (autopuhelin jasen) (liittymisvuosi jasen) (jasenmaksu jasen) (maksettu jasen) (lisatieto jasen) (delete poistettava (harrastukset jasen))
+
 
 -- Työn alla olevia juttuja
 --muokkaaHarrastus :: Harrastus -> Jasen
