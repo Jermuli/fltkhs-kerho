@@ -75,6 +75,8 @@ muokkaaJasenCallback n' h' k' pn' po' kp' tp' ap' lv' jm' mm' l' selain b' = do
                         labelMustaksi jm'
                         labelMustaksi mm'
                         kerho <- (readIORef valittuKerho)
+                        indeksi <- (jasenenOikeaPaikka (lineNumberToInt line))
+                        valittuJasen <- (jasenenValinta (jasenet kerho) (lineNumberToInt line))
                         modifyIORef valittuKerho (muokkaaJasen  (Jasen  (Just nimi) 
                                                                         (Just hetu)
                                                                         (Just katu)
@@ -87,12 +89,13 @@ muokkaaJasenCallback n' h' k' pn' po' kp' tp' ap' lv' jm' mm' l' selain b' = do
                                                                         (Just (read (T.unpack jasenM) :: Double))
                                                                         (Just (read (T.unpack maksettuM) :: Double))
                                                                         (Just lisa)
-                                                                        (harrastukset ((jasenet kerho) !! (lineNumberToInt line))))
-                                                                (lineNumberToInt line))
+                                                                        (harrastukset valittuJasen))
+                                                                        indeksi)
                         remove selain line
                         insert selain line nimi
-                        sort selain
                         modifyIORef valittuKerho sortKerho
+                        haetutRivit selain
+
 
 --Tarkistaa onko kenttään annettu arvo, mahdollisesti lisätään parametriksi funktio, jota käytetään arvon tarkastukseen
 virheet :: Ref Input -> IO ()
@@ -139,7 +142,8 @@ hakuCallbackApu selain hakusana kriteeri = do
                                         sana <- getValue hakusana
                                         if (vertailu sana (T.pack ""))
                                             then do
-                                                writeIORef nakyvatJasenet []
+                                                pituus <- readIORef valittuKerho
+                                                writeIORef nakyvatJasenet (replicate (length (jasenet pituus)) True)
                                                 haetutRivit selain
                                             else do
                                                 kerho <- readIORef valittuKerho
@@ -169,13 +173,6 @@ haetutRivitApu selain lista = do
                                                                 add selain x
                                     (_, False)          -> do
                                                                 return ()
---haku :: Ref SelectBrowser -> T.Text -> LineNumber -> IO ()
---haku selain haku i = do
---                        rivi <- getText selain i
---                        if (haku == rivi) 
---                        then return ()
---                        else 
---                            hideLine selain i
 
 vertailu :: T.Text -> T.Text -> Bool
 vertailu a b = T.isInfixOf a b
@@ -187,7 +184,8 @@ poistaJasenCallback selain b' = do
     if not sisalla
         then do return ()
         else do
-            modifyIORef valittuKerho (poistaJasen (lineNumberToInt line))
+            valittuJasen <- (jasenenOikeaPaikka (lineNumberToInt line))
+            modifyIORef valittuKerho (poistaJasen valittuJasen)
             remove selain line
 
 
@@ -211,44 +209,45 @@ valitseJasenCallback n' h' k' pn' po' kp' tp' ap' lv' jm' mm' l' table selain = 
                 labelMustaksi jm'
                 labelMustaksi mm'
                 kerho   <- (readIORef valittuKerho)
-                setValue n' (case nimi ((jasenet kerho) !!  (lineNumberToInt line)) of --jasenTekstiksi nimi ((jasenet kerho) !! (lineNumberToInt line)) 
+                valittuJasen <- (jasenenValinta (jasenet kerho) (lineNumberToInt line))
+                setValue n' (case nimi valittuJasen of --jasenTekstiksi nimi ((jasenet kerho) !! (lineNumberToInt line)) 
                                     Just x  -> x
                                     Nothing -> T.pack "")
-                setValue h' (case hetu ((jasenet kerho) !!  (lineNumberToInt line)) of
+                setValue h' (case hetu valittuJasen of
                                     Just x  -> x
                                     _       -> T.pack "")
-                setValue k' (case katuosoite ((jasenet kerho) !!  (lineNumberToInt line)) of
+                setValue k' (case katuosoite valittuJasen of
                                     Just x  ->  x
                                     _       -> T.pack "")
-                setValue pn' (case postinumero ((jasenet kerho) !!  (lineNumberToInt line)) of
+                setValue pn' (case postinumero valittuJasen of
                                     Just x  -> T.pack (show x)
                                     _       -> T.pack "")
-                setValue po' (case postiosoite ((jasenet kerho) !!  (lineNumberToInt line)) of
+                setValue po' (case postiosoite valittuJasen  of
                                     Just x  -> x
                                     _       -> T.pack "")
-                setValue kp' (case kotipuhelin ((jasenet kerho) !!  (lineNumberToInt line)) of
+                setValue kp' (case kotipuhelin valittuJasen of
                                     Just x  -> T.pack (show x)
                                     _       -> T.pack "")
-                setValue tp' (case tyopuhelin ((jasenet kerho) !!  (lineNumberToInt line)) of
+                setValue tp' (case tyopuhelin valittuJasen of
                                     Just x  -> T.pack (show x)
                                     _       -> T.pack "")
-                setValue ap' (case autopuhelin ((jasenet kerho) !!  (lineNumberToInt line)) of
+                setValue ap' (case autopuhelin valittuJasen of
                                     Just x  -> T.pack (show x)
                                     _       -> T.pack "")
-                setValue lv' (case liittymisvuosi ((jasenet kerho) !!  (lineNumberToInt line)) of
+                setValue lv' (case liittymisvuosi valittuJasen of
                                     Just x  -> T.pack (show x)
                                     _       -> T.pack "")
-                setValue jm' (case jasenmaksu ((jasenet kerho) !!  (lineNumberToInt line)) of
+                setValue jm' (case jasenmaksu valittuJasen of
                                     Just x  -> T.pack (show x)
                                     _       -> T.pack "")
-                setValue mm' (case maksettu ((jasenet kerho) !!  (lineNumberToInt line)) of
+                setValue mm' (case maksettu valittuJasen of
                                     Just x  -> T.pack (show x)
                                     _       -> T.pack "")
-                setValue l' (case lisatieto ((jasenet kerho) !!  (lineNumberToInt line)) of
+                setValue l' (case lisatieto valittuJasen of
                                     Just x  -> x
                                     _       -> T.pack "")
                                     
-                writeIORef rowData (jasenenHarrastukset ((jasenet kerho) !!  (lineNumberToInt line)))
+                writeIORef rowData (jasenenHarrastukset valittuJasen)
                 readIORef rowData >>= setRows table . Rows . length
                 writeIORef sortRev False
                 writeIORef sortLast (-1)
@@ -306,8 +305,10 @@ lisaaHarrastusApuCallback laj aloitus tuntia i table window selain b = do
                                                                             a <- getValue aloitus
                                                                             t <- getValue tuntia
                                                                             kerho <- readIORef valittuKerho
-                                                                            modifyIORef valittuKerho (muokkaaJasen (lisaaHarrastus (Harrastus (Just l) (Just (read (T.unpack a))) (Just (read (T.unpack t)))) ((jasenet kerho) !! i)) i)
-                                                                            writeIORef rowData (jasenenHarrastukset ((jasenet kerho) !!  i))
+                                                                            indeksi <- (jasenenValinta (jasenet kerho) i)
+                                                                            jasenenIndeksi <- (jasenenOikeaPaikka i)
+                                                                            modifyIORef valittuKerho (muokkaaJasen (lisaaHarrastus (Harrastus (Just l) (Just (read (T.unpack a))) (Just (read (T.unpack t)))) indeksi) jasenenIndeksi)
+                                                                            writeIORef rowData (jasenenHarrastukset indeksi)
                                                                             readIORef rowData >>= setRows table . Rows . length
                                                                             hide window
                                                                             redraw table --Jostain syystä ei toimi, jäsen valittava uudestaan jotta taulukko päivittyy
@@ -317,6 +318,22 @@ lisaaHarrastusApuCallback laj aloitus tuntia i table window selain b = do
 -- Muutetaan listan linenumber vastaamaan tietorakenteessa kyseisen henkilön indeksiä
 lineNumberToInt :: LineNumber -> Int
 lineNumberToInt (LineNumber x) = (read (show x)) - 1
+
+jasenenOikeaPaikka :: Int -> IO (Int)
+jasenenOikeaPaikka i = do
+                            nakyvat <- readIORef nakyvatJasenet
+                            return (i + (length (filter ( == False) (take (i+1) nakyvat))))
+
+jasenenValinta :: [Jasen] -> Int -> IO (Jasen)
+jasenenValinta listaJasenista i = do
+                                    nakyvat <- readIORef nakyvatJasenet
+                                    return (jasenenValintaApu listaJasenista nakyvat i)
+jasenenValintaApu :: [Jasen] -> [Bool] -> Int -> Jasen
+jasenenValintaApu (x:xs) (y:ys) i = case (y, i) of
+                                        (True, 0)   -> x
+                                        _           -> case y of
+                                                            True    -> jasenenValintaApu xs ys (i-1)
+                                                            _       -> jasenenValintaApu xs ys i
 --
 tcToInt :: TableCoordinate -> Int
 tcToInt (TableCoordinate (Row x) y) = (read (show x))
@@ -328,8 +345,10 @@ poistaHarrastusCallback selain taulu b = do
                                     line <- getValue selain
                                     kerho <- readIORef valittuKerho
                                     let currentRow = tiedot !! (tcToInt (fst rivi))
-                                    modifyIORef valittuKerho (muokkaaJasen (poistaHarrastus (Harrastus (Just (currentRow !! 0)) (Just (read (T.unpack(currentRow !! 1)))) (Just (read (T.unpack(currentRow !! 2))))) ((jasenet kerho) !! (lineNumberToInt line))) (lineNumberToInt line)) 
-                                    writeIORef rowData (jasenenHarrastukset ((jasenet kerho) !!  (lineNumberToInt line)))
+                                    i <- jasenenOikeaPaikka (lineNumberToInt line)
+                                    valittuJasen <- (jasenenValinta (jasenet kerho) i)
+                                    modifyIORef valittuKerho (muokkaaJasen (poistaHarrastus (Harrastus (Just (currentRow !! 0)) (Just (read (T.unpack(currentRow !! 1)))) (Just (read (T.unpack(currentRow !! 2))))) valittuJasen) i) 
+                                    writeIORef rowData (jasenenHarrastukset valittuJasen)
                                     readIORef rowData >>= setRows taulu . Rows . length
                                     writeIORef sortRev False
                                     writeIORef sortLast (-1)
@@ -351,9 +370,11 @@ lisaaJasenCallback selain button = do
                                                 (Nothing)
                                                 (Nothing)
                                                 []))
-    add selain ("uusi jäsen")
-    sort selain
+    
     modifyIORef valittuKerho sortKerho
+    haetutRivit selain
+    nakyvat <- readIORef nakyvatJasenet
+    writeIORef nakyvatJasenet (nakyvat ++ [True])
 
 {----------------------------------------------------------------------------------------------------------------
 Tämän viivan alapuolella oleva koodi käsittelee harrastustaulukkoa. Kyseinen koodi on otettu lähes suoraan pienin 
