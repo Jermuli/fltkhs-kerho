@@ -20,8 +20,8 @@ import Data.Function
 -- Pienempi prioriteetti: tee paremmat tarkistukset jäsenen infonsyöttöön, selvitä miksi redraw ei toimi joissain tapauksissa, lisää harrastusten muokkaus
 
 -- Toistaiseksi käyttämätön 
-valittuJasen :: IORef [Harrastus]
-valittuJasen = unsafePerformIO $ newIORef []
+nakyvatJasenet :: IORef [Bool]
+nakyvatJasenet = unsafePerformIO $ newIORef []
 
 -- Tietorakenne jossa säilytetään tiedot käsiteltävästä kerhosta
 valittuKerho :: IORef Kerho
@@ -109,30 +109,66 @@ labelMustaksi input = do
                         setLabelcolor input blackColor
                         redraw input --Jostain syystä tämäkään redraw ei toimi
 -- TODO: jäsenten etsimiseen käytettävä funktio
---hakuCallback :: Ref SelectBrowser -> Ref Choice -> Ref Input -> IO ()
---hakuCallback selain valitsin haku = do
---    case valitsin of
---        "Nimi"              -> do hakuCallbackApu selain valitsin nimi
---        "Hetu"              -> do hakuCallbackApu selain valitsin hetu
---        "Katuosoite"        -> do hakuCallbackApu selain valitsin katuosoite
---        "Postinumero"       -> do hakuCallbackApu selain valitsin postinumero
---        "Postiosoite"       -> do hakuCallbackApu selain valitsin postiosoite
---        "Kotipuhelin"       -> do hakuCallbackApu selain valitsin kotipuhelin
---        "Työpuhelin"        -> do hakuCallbackApu selain valitsin tyopuhelin
---        "Autopuhelin"       -> do hakuCallbackApu selain valitsin autopuhelin
---        "Liittymisvuosi"    -> do hakuCallbackApu selain valitsin liittymisvuosi
---        "Jäsenmaksu"        -> do hakuCallbackApu selain valitsin jasenmaksu
---        "Maksettu maksu"    -> do hakuCallbackApu selain valitsin maksettu
---        "Lisätietoja"       -> do hakuCallbackApu selain valitsin lisatieto
+hakuCallback :: Ref SelectBrowser -> Ref Choice -> Ref Input -> IO ()
+hakuCallback selain valitsin haku = do
+    hakusana <- getText valitsin
+    case hakusana of
+        "Nimi"              -> do hakuCallbackApu selain haku (mbyToText . nimi)
+        "Hetu"              -> do hakuCallbackApu selain haku (mbyToText . hetu)
+        "Katuosoite"        -> do hakuCallbackApu selain haku (mbyToText . katuosoite)
+        "Postinumero"       -> do hakuCallbackApu selain haku (mbyNumToText . postinumero)
+        "Postiosoite"       -> do hakuCallbackApu selain haku (mbyToText . postiosoite)
+        "Kotipuhelin"       -> do hakuCallbackApu selain haku (mbyNumToText . kotipuhelin)
+        "Työpuhelin"        -> do hakuCallbackApu selain haku (mbyNumToText . tyopuhelin)
+        "Autopuhelin"       -> do hakuCallbackApu selain haku (mbyNumToText . autopuhelin)
+        "Liittymisvuosi"    -> do hakuCallbackApu selain haku (mbyNumToText . liittymisvuosi)
+        "Jäsenmaksu"        -> do hakuCallbackApu selain haku (mbyNumToText . jasenmaksu)
+        "Maksettu maksu"    -> do hakuCallbackApu selain haku (mbyNumToText . maksettu)
+        "Lisätietoja"       -> do hakuCallbackApu selain haku (mbyToText . lisatieto)
 --
---hakuCallbackApu :: Ref SelectBrowser -> Ref Input -> (Jasen -> Maybe T.Text) -> IO ()
---hakuCallbackApu selain haku kriteeri = do
---                                        sana <- getValue haku
---                                          if (sana == "")
---                                          then return ()
---                                          else
---                                          map (\x -> sana == (kriteeri . ((!!) x) . jasenet valittukerho)) [1 .. getSize]
---                                        
+mbyToText :: Maybe T.Text -> T.Text
+mbyToText text = case text of
+                    Just x  -> x
+                    Nothing -> ""
+mbyNumToText :: Show a => Maybe a -> T.Text
+mbyNumToText num = case num of
+                    Just x  -> T.pack (show x)
+                    Nothing -> ""
+hakuCallbackApu :: Ref SelectBrowser -> Ref Input -> (Jasen -> T.Text) -> IO ()
+hakuCallbackApu selain hakusana kriteeri = do
+                                        sana <- getValue hakusana
+                                        if (vertailu sana (T.pack ""))
+                                            then do
+                                                writeIORef nakyvatJasenet []
+                                                haetutRivit selain
+                                            else do
+                                                kerho <- readIORef valittuKerho
+                                                writeIORef nakyvatJasenet (map ((vertailu sana) . kriteeri) (jasenet kerho))
+                                                haetutRivit selain
+
+haetutRivit :: Ref SelectBrowser -> IO ()
+haetutRivit selain = do
+                        clear selain
+                        kerho <- readIORef valittuKerho
+                        nakyvat <- readIORef nakyvatJasenet
+                        if (nakyvat == [])
+                            then do
+                                mapM ((add selain) . mbyToText . nimi) (jasenet kerho)
+                                return ()
+                            else do
+                                let naytettavat = zip (jasenet kerho) nakyvat
+                                mapM (haetutRivitApu selain) naytettavat
+                                return ()
+                        
+haetutRivitApu :: Ref SelectBrowser -> (Jasen, Bool) -> IO ()
+haetutRivitApu selain lista = do 
+                                case ((nimi (fst lista)), (snd lista)) of
+                                    (Nothing, True)     -> do 
+                                                                add selain ""
+                                    (Just x, True)      -> do
+                                                                add selain x
+                                    (_, False)          -> do
+                                                                return ()
 --haku :: Ref SelectBrowser -> T.Text -> LineNumber -> IO ()
 --haku selain haku i = do
 --                        rivi <- getText selain i
@@ -140,6 +176,9 @@ labelMustaksi input = do
 --                        then return ()
 --                        else 
 --                            hideLine selain i
+
+vertailu :: T.Text -> T.Text -> Bool
+vertailu a b = T.isInfixOf a b
 -- Testaamaton jäsenenpoistofunktio
 poistaJasenCallback :: Ref SelectBrowser -> Ref Button -> IO () -- MenuItemBase
 poistaJasenCallback selain b' = do
