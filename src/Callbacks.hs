@@ -17,8 +17,10 @@ import qualified Data.Text as T
 import qualified Data.Text.IO as TIO
 import Data.List hiding (sort, insert)
 import Data.Function
+import Web.Browser
+import System.Exit
 
--- TODO: Tärkeät: Korjaa harrastusten poistosta tapahtuva kaatuminen lisäämällä tarkistuksia, lisää tarkistus ladattavan tiedoston nimeen, laita kentät päivittymään paremmin
+-- TODO: Tärkeät: Korjaa harrastusten poistosta tapahtuva kaatuminen lisäämällä tarkistuksia, lisää tarkistus ladattavan tiedoston nimeen, laita kentät päivittymään paremmin, tee kerhon nimeä kysyvä ikkuna heti ohjelman avauduttua
 -- Pienempi prioriteetti: tee paremmat tarkistukset jäsenen infonsyöttöön, selvitä miksi redraw ei toimi joissain tapauksissa, lisää harrastusten muokkaus
 
 -- Toistaiseksi käyttämätön 
@@ -29,9 +31,15 @@ nakyvatJasenet = unsafePerformIO $ newIORef []
 valittuKerho :: IORef Kerho
 valittuKerho = unsafePerformIO $ newIORef (Kerho Nothing [])
 
---Testi jäsen
-testiJasen :: Jasen 
-testiJasen = Jasen (Just "terve") (Just "070995-2351") (Just "taitoniekantie") (Just 0671134) (Just "jkl") (Just 095458) (Just 084357) (Just 5487515) (Just 20) (Just 20) (Just 20) Nothing [(Harrastus (Just "taido") (Just 50) (Just 40)), (Harrastus (Just "karate") (Just 5) (Just 2)),(Harrastus (Just "aikido") (Just 30) (Just 10))]
+-- Avaa nettiselaimeen ohjelman versiohallinnan sivuston
+avaaTiedotCallback :: Ref MenuItem -> IO ()
+avaaTiedotCallback m = do
+                            onnistuiko <- openBrowser "https://github.com/Jermuli/fltkhs-kerho"
+                            return ()
+
+-- Lopettaa ohjelman
+quitCb :: Ref MenuItem -> IO ()
+quitCb _ = exitSuccess
 
 -- Ottaa jäsenentietokentistä arvot ja tarkistaa ovatko ne oikein, jonka jälkeen päivittää tiedot tietorakenteeseen
 muokkaaJasenCallback :: Ref Input -> Ref Input -> Ref Input -> Ref Input -> Ref Input -> Ref Input -> Ref Input -> Ref Input -> Ref Input -> Ref Input -> Ref Input -> Ref Input -> Ref SelectBrowser -> Ref Button -> IO ()
@@ -136,6 +144,7 @@ mbyToText :: Maybe T.Text -> T.Text
 mbyToText text = case text of
                     Just x  -> x
                     Nothing -> " "
+
 -- Sama kun ylempi mutta numeroille (toimii tosin kaikelle joille Show on määritelty)
 mbyNumToText :: Show a => Maybe a -> T.Text
 mbyNumToText num = case num of
@@ -183,12 +192,12 @@ haetutRivitApu selain lista = do
                                                                 return ()
 
 -- Luo ikkunan jolla käyttäjä voi vaihtaa kerhon nimeä
-vaihdaKerhonNimiCallback :: Ref Button -> IO ()
+vaihdaKerhonNimiCallback :: Ref MenuItem -> IO ()
 vaihdaKerhonNimiCallback b = do
                                 w <- windowNew (toSize (300,100)) Nothing (Just "Vaihda kerhon nimeä")
                                 begin w
                                 b <-    buttonNew
-                                        (Rectangle (Position (X 100) (Y 65)) (Size (Width 100) (Height 30)))
+                                        (Rectangle (Position (X 100) (Y 65)) (Size (Width 140) (Height 30)))
                                         (Just "Vaihda kerhon Nimi")
                                 iKohde       <- inputNew (toRectangle (100,30,190,25)) (Just "Kerhon nimi") (Just FlNormalInput)
                                 setCallback b (vaihdaKerhonNimi iKohde w)
@@ -207,7 +216,7 @@ vaihdaKerhonNimi input w b = do
                                                 hide w
                                                 
 -- Tallentaa kerhon tiedot kahteen tiedostoon: "kerhon nimi".dat joka sisältää jäsenten tiedot sekä "kerhon nimi".har joka sisältää harrastusten tiedot
-tallennaKerho :: Ref Button -> IO ()
+tallennaKerho :: Ref MenuItem -> IO ()
 tallennaKerho b = do
                 kerho <- readIORef valittuKerho
                 case kerhonNimi kerho of
@@ -245,7 +254,7 @@ jasenenHarrastuksetTekstiksi :: (Int, Jasen) -> T.Text
 jasenenHarrastuksetTekstiksi (i, jasen) = T.concat (map (harrastusTekstiksi i) (harrastukset jasen))
 
 -- Callback joka luo ikkunan jolle voidaan syöttää ladattavan harrastuksen nimi
-latausIkkunaCallback :: Ref Button -> IO ()
+latausIkkunaCallback :: Ref MenuItem -> IO ()
 latausIkkunaCallback b = do
                             w <- windowNew (toSize (300,100)) Nothing (Just "Avaa kerho")
                             begin w

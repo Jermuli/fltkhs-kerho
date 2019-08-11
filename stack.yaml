@@ -5,3 +5,4 @@ packages:
 resolver: lts-12.26
 extra-deps:
 - fltkhs-0.8.0.0
+- open-browser-0.2.1.0
