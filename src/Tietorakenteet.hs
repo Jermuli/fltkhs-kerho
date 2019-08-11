@@ -82,11 +82,17 @@ muokkaaJasenApu uudettiedot paikka (x:xs)   = case paikka of
                                                 0   -> (uudettiedot:xs)
                                                 _   -> (x:(muokkaaJasenApu uudettiedot (paikka - 1) xs))
 -- Muuttaa jäsenen tiedot tekstiksi, ei käytetä tällähetkellä, koska ääkköset eivät näytä kääntyvän oikein tätä käyttäessä
-jasenTekstiksi :: Show a => Jasen -> (Jasen -> Maybe a) -> T.Text
-jasenTekstiksi jasen f = case f jasen of
-                            Nothing ->  T.pack " "
-                            Just x  ->  T.pack (show x)
-                            
+--jasenTekstiksi :: Show a => Jasen -> (Jasen -> Maybe a) -> T.Text
+--jasenTekstiksi jasen f = case f jasen of
+--                            Nothing ->  T.pack " "
+--                            Just x  ->  T.pack (show x)
+
+--lisaaKerhoonHarrastukset :: Kerho -> [(Int, Harrastus)] -> Kerho
+--lisaaKerhoonHarrastukset kerho lajit = Kerho (kerhonNimi kerho) (lisaaJasenilleHarrastukset (jasenet kerho) lajit)
+--
+--lisaaJasenilleHarrastukset :: [Jasen] -> [(Int, Harrastus)] -> [Jasen]
+--lisaaJasenilleHarrastukset ihmiset [(i, laji)] = 
+
 -- Lisätään harrastus jäsenelle
 lisaaHarrastus :: Harrastus -> Jasen -> Jasen
 lisaaHarrastus harrastus jasen = Jasen (nimi jasen) (hetu jasen) (katuosoite jasen) (postinumero jasen) (postiosoite jasen) (kotipuhelin jasen) (tyopuhelin jasen) (autopuhelin jasen) (liittymisvuosi jasen) (jasenmaksu jasen) (maksettu jasen) (lisatieto jasen) ((harrastukset jasen) ++ [harrastus])

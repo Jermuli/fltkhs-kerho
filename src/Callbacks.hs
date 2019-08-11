@@ -23,7 +23,7 @@ import System.Exit
 -- TODO: Tärkeät: Korjaa harrastusten poistosta tapahtuva kaatuminen lisäämällä tarkistuksia, lisää tarkistus ladattavan tiedoston nimeen, laita kentät päivittymään paremmin, tee kerhon nimeä kysyvä ikkuna heti ohjelman avauduttua
 -- Pienempi prioriteetti: tee paremmat tarkistukset jäsenen infonsyöttöön, selvitä miksi redraw ei toimi joissain tapauksissa, lisää harrastusten muokkaus
 
--- Toistaiseksi käyttämätön 
+-- Pitää listaa siitä mitkä jäsenistä ovat haun mukaisia jolloin ne näytetään
 nakyvatJasenet :: IORef [Bool]
 nakyvatJasenet = unsafePerformIO $ newIORef []
 
@@ -34,7 +34,7 @@ valittuKerho = unsafePerformIO $ newIORef (Kerho Nothing [])
 -- Avaa nettiselaimeen ohjelman versiohallinnan sivuston
 avaaTiedotCallback :: Ref MenuItem -> IO ()
 avaaTiedotCallback m = do
-                            onnistuiko <- openBrowser "https://github.com/Jermuli/fltkhs-kerho"
+                            _ <- openBrowser "https://github.com/Jermuli/fltkhs-kerho"
                             return ()
 
 -- Lopettaa ohjelman
@@ -209,7 +209,7 @@ vaihdaKerhonNimi :: Ref Input -> Ref Window -> Ref Button -> IO ()
 vaihdaKerhonNimi input w b = do
                                 uusiNimi <- getValue input
                                 case T.strip uusiNimi of
-                                    ""  -> do return ()
+                                    ""  -> do setLabelcolor input redColor
                                     x   -> do   
                                                 kerho <- readIORef valittuKerho
                                                 modifyIORef valittuKerho (vaihdaKerhonNimea uusiNimi)
@@ -262,36 +262,31 @@ latausIkkunaCallback b = do
                                     (Rectangle (Position (X 125) (Y 65)) (Size (Width 50) (Height 30)))
                                     (Just "Avaa")
                             iKohde       <- inputNew (toRectangle (100,30,190,25)) (Just "Kerhon nimi") (Just FlNormalInput)
-                            setCallback b (lataaKerho iKohde)
+                            setCallback b (lataaKerho iKohde w)
                             end w
                             showWidget w
 
 -- Lataa kerhon tiedot kerhon nimeä vastaavista tiedostoista .dat ja .har
-lataaKerho :: Ref Input -> Ref Button -> IO ()
-lataaKerho input b = do
+lataaKerho :: Ref Input -> Ref Window -> Ref Button -> IO ()
+lataaKerho input w b = do
                         ladattavanKerhonNimi <- getValue input
                         jasenTiedostonSisalto <- TIO.readFile ((T.unpack ladattavanKerhonNimi) ++ ".dat")
-                        let kerhonJasenet = map tekstiJaseneksi (T.splitOn "\n" jasenTiedostonSisalto)
+                        let kerhonJasenet = map tekstiJaseneksi (init (T.splitOn "\n" jasenTiedostonSisalto))
                         harrastusTiedostonSisalto <- TIO.readFile ((T.unpack ladattavanKerhonNimi) ++ ".har")
-                        writeIORef valittuKerho (Kerho (Just ladattavanKerhonNimi) kerhonJasenet)
-                        let kerhonJasenienHarrastukset = map tekstiHarrastukseksi (T.splitOn "\n" harrastusTiedostonSisalto)
-                        jasenetIlmanHarrastuksia <- readIORef valittuKerho
-                        lisaaKerhoonHarrastukset kerhonJasenienHarrastukset (jasenet jasenetIlmanHarrastuksia) 
+                        writeIORef valittuKerho (sortKerho (Kerho (Just ladattavanKerhonNimi) kerhonJasenet))
+                        let kerhonJasenienHarrastukset = map tekstiHarrastukseksi (init (T.splitOn "\n" harrastusTiedostonSisalto))
+                        kerhoIlmanHarrastuksia <- readIORef valittuKerho
+                        mapM_ lisaaKerhoonHarrastukset kerhonJasenienHarrastukset
+                        hide w
 
--- Ottaa harrastukset ja indeksit ja asettaa ne vastaaville jäsenille
-lisaaKerhoonHarrastukset :: [(Maybe Int, Harrastus)] -> [Jasen] -> IO ()
-lisaaKerhoonHarrastukset harrastukset jasenet = do
-                                                    mapM (kerhonHarrastukset jasenet) harrastukset
-                                                    return ()
-
--- Lisää yhden harrastuksen kerhon jäsenille
-kerhonHarrastukset :: [Jasen] -> (Maybe Int, Harrastus) -> IO ()
-kerhonHarrastukset henkilot (i, harrastus) = do
-                                                case i of 
-                                                    Nothing     -> do return ()
-                                                    Just x      -> do
+-- Ottaa harrastuksen ja indeksin ja asettaa sen indeksiä vastaavalle kerhon jäsenelle
+lisaaKerhoonHarrastukset :: (Maybe Int, Harrastus) -> IO ()
+lisaaKerhoonHarrastukset (i, harrastus) =  do
+                                                    case i of 
+                                                        Nothing     -> do return ()
+                                                        Just x      -> do
                                                                     kerho <- readIORef valittuKerho
-                                                                    modifyIORef valittuKerho (muokkaaJasen (lisaaHarrastus harrastus (henkilot !! x)) x)
+                                                                    modifyIORef valittuKerho (muokkaaJasen (lisaaHarrastus harrastus ((jasenet kerho) !! x)) x)
 
 -- Jakaa tiedostosta luettavan tekstin osiin, jotka voidaan laittaa myöhemmin harrastuksille
 tekstiHarrastukseksi :: T.Text -> (Maybe Int, Harrastus)
