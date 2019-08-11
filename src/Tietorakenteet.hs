@@ -47,7 +47,8 @@ tarkistaTotuudet [] = True
 tarkistaTotuudet (x:xs) = case x == True of
                             True    -> tarkistaTotuudet xs
                             False   -> False
-                            
+
+-- Vaihtaa kerhon nimen                            
 vaihdaKerhonNimea ::  T.Text -> Kerho -> Kerho
 vaihdaKerhonNimea uusiNimi klubi = Kerho (Just uusiNimi) (jasenet klubi)
 
@@ -97,12 +98,3 @@ poistaHarrastus poistettava jasen = Jasen (nimi jasen) (hetu jasen) (katuosoite 
 
 -- Työn alla olevia juttuja
 --muokkaaHarrastus :: Harrastus -> Jasen
-
---lataaKerho :: IO T.Text -> IO Kerho
---lataaKerho tiedostoNimi = case tiedostoNimi of
---                            []  -> Kerho ([], [])
---                            _   -> Kerho (tiedostoNimi, lueTiedosto)
---    where 
---    lueTiedosto = --TODO lisää tiedoston lukeminen
-
---tallennaKerho :: Kerho -> IO

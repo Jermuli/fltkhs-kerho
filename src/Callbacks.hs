@@ -18,7 +18,7 @@ import qualified Data.Text.IO as TIO
 import Data.List hiding (sort, insert)
 import Data.Function
 
--- TODO: Tärkeät: lisää jäsenten etsiminen, jäsenten sekä harrastusten poisto, tiedostoon tallentaminen ja avaaminen
+-- TODO: Tärkeät: Korjaa harrastusten poistosta tapahtuva kaatuminen lisäämällä tarkistuksia, lisää tarkistus ladattavan tiedoston nimeen, laita kentät päivittymään paremmin
 -- Pienempi prioriteetti: tee paremmat tarkistukset jäsenen infonsyöttöön, selvitä miksi redraw ei toimi joissain tapauksissa, lisää harrastusten muokkaus
 
 -- Toistaiseksi käyttämätön 
@@ -103,7 +103,7 @@ muokkaaJasenCallback n' h' k' pn' po' kp' tp' ap' lv' jm' mm' l' selain b' = do
 virheet :: Ref Input -> IO ()
 virheet input = do 
                     arvo <- getValue input
-                    case arvo of
+                    case T.strip arvo of
                         ""  -> do   setLabelcolor input redColor
                                     redraw input
                         _   -> do return ()
@@ -113,7 +113,7 @@ labelMustaksi :: Ref Input -> IO ()
 labelMustaksi input = do
                         setLabelcolor input blackColor
                         redraw input --Jostain syystä tämäkään redraw ei toimi
--- TODO: jäsenten etsimiseen käytettävä funktio
+-- Karsii jäsenlistalta jäsenet jotka eivät täytä hakukriteeriä
 hakuCallback :: Ref SelectBrowser -> Ref Choice -> Ref Input -> IO ()
 hakuCallback selain valitsin haku = do
     hakusana <- getText valitsin
@@ -130,15 +130,19 @@ hakuCallback selain valitsin haku = do
         "Jäsenmaksu"        -> do hakuCallbackApu selain haku (mbyNumToText . jasenmaksu)
         "Maksettu maksu"    -> do hakuCallbackApu selain haku (mbyNumToText . maksettu)
         "Lisätietoja"       -> do hakuCallbackApu selain haku (mbyToText . lisatieto)
---
+        
+-- Muuttaa maybe textin textiksi, jotta voimme laittaa ulos jotakin siinätapauksessa jos kyseinen arvo on nothing
 mbyToText :: Maybe T.Text -> T.Text
 mbyToText text = case text of
                     Just x  -> x
-                    Nothing -> ""
+                    Nothing -> " "
+-- Sama kun ylempi mutta numeroille (toimii tosin kaikelle joille Show on määritelty)
 mbyNumToText :: Show a => Maybe a -> T.Text
 mbyNumToText num = case num of
                     Just x  -> T.pack (show x)
-                    Nothing -> ""
+                    Nothing -> " "
+
+-- Ylläpitää nakyvatJasenet muuttujaa, joka määrittää mitkä jäsenet ovat haettuja ja kutsuu haetutRivit funktiota joka kirjoittaa kyseiset jäsenet listalle
 hakuCallbackApu :: Ref SelectBrowser -> Ref Input -> (Jasen -> T.Text) -> IO ()
 hakuCallbackApu selain hakusana kriteeri = do
                                         sana <- getValue hakusana
@@ -152,6 +156,7 @@ hakuCallbackApu selain hakusana kriteeri = do
                                                 writeIORef nakyvatJasenet (map ((vertailu sana) . kriteeri) (jasenet kerho))
                                                 haetutRivit selain
 
+-- Kirjoittaa haettujen jäsenten nimet jäsenlistaan
 haetutRivit :: Ref SelectBrowser -> IO ()
 haetutRivit selain = do
                         clear selain
@@ -165,7 +170,8 @@ haetutRivit selain = do
                                 let naytettavat = zip (jasenet kerho) nakyvat
                                 mapM (haetutRivitApu selain) naytettavat
                                 return ()
-                        
+
+-- Apufunktio ylemmälle funktiolle, vertailee täyttääkö yksin jäsen hakuvaatimukset
 haetutRivitApu :: Ref SelectBrowser -> (Jasen, Bool) -> IO ()
 haetutRivitApu selain lista = do 
                                 case ((nimi (fst lista)), (snd lista)) of
@@ -176,6 +182,7 @@ haetutRivitApu selain lista = do
                                     (_, False)          -> do
                                                                 return ()
 
+-- Luo ikkunan jolla käyttäjä voi vaihtaa kerhon nimeä
 vaihdaKerhonNimiCallback :: Ref Button -> IO ()
 vaihdaKerhonNimiCallback b = do
                                 w <- windowNew (toSize (300,100)) Nothing (Just "Vaihda kerhon nimeä")
@@ -187,27 +194,33 @@ vaihdaKerhonNimiCallback b = do
                                 setCallback b (vaihdaKerhonNimi iKohde w)
                                 end w
                                 showWidget w
+
+-- Callbackfunktio joka vaihtaa kerhon nimen
 vaihdaKerhonNimi :: Ref Input -> Ref Window -> Ref Button -> IO ()
 vaihdaKerhonNimi input w b = do
                                 uusiNimi <- getValue input
-                                case uusiNimi of
+                                case T.strip uusiNimi of
                                     ""  -> do return ()
                                     x   -> do   
                                                 kerho <- readIORef valittuKerho
                                                 modifyIORef valittuKerho (vaihdaKerhonNimea uusiNimi)
                                                 hide w
+                                                
+-- Tallentaa kerhon tiedot kahteen tiedostoon: "kerhon nimi".dat joka sisältää jäsenten tiedot sekä "kerhon nimi".har joka sisältää harrastusten tiedot
 tallennaKerho :: Ref Button -> IO ()
 tallennaKerho b = do
                 kerho <- readIORef valittuKerho
-                --TIO.writeFile "testi.dat" (tallennaJasenet (jasenet kerho))
                 case kerhonNimi kerho of
                     Nothing     -> do return ()
                     Just x      -> do 
                                         TIO.writeFile ((T.unpack x) ++ ".dat") (tallennaJasenet (jasenet kerho))
                                         TIO.writeFile ((T.unpack x) ++ ".har") (tallennaHarrastukset (jasenet kerho))
+                                        
+-- Muuttaa jäsenten tiedot tekstimuotoon
 tallennaJasenet :: [Jasen] -> T.Text
 tallennaJasenet joukko = T.concat (map tiedotTekstiksi joukko)
 
+-- Apufunktio tallennaJasenet funktiolle
 tiedotTekstiksi :: Jasen -> T.Text
 tiedotTekstiksi jasen = T.append    (T.concat ([(T.append (mbyToText (nimi jasen)) "||"), 
                                                 (T.append (mbyToText (hetu jasen)) "||"), 
@@ -223,12 +236,15 @@ tiedotTekstiksi jasen = T.append    (T.concat ([(T.append (mbyToText (nimi jasen
                                                 (T.append (mbyToText (lisatieto jasen)) "||")]))
                                     (T.pack "\n")
 
+-- Muuttaa harrastuksien tiedot tekstiksi ja lisää tietoihin jäsentä vastaavan indeksin jotta ne voidaan kirjoittaa tallennustiedostoon
 tallennaHarrastukset :: [Jasen] -> T.Text
 tallennaHarrastukset joukko = T.concat (map jasenenHarrastuksetTekstiksi (zip [0..((length joukko) - 1)] joukko))
---
+
+-- Muuttaa yhden harrastuksen tiedot tekstiksi
 jasenenHarrastuksetTekstiksi :: (Int, Jasen) -> T.Text
 jasenenHarrastuksetTekstiksi (i, jasen) = T.concat (map (harrastusTekstiksi i) (harrastukset jasen))
 
+-- Callback joka luo ikkunan jolle voidaan syöttää ladattavan harrastuksen nimi
 latausIkkunaCallback :: Ref Button -> IO ()
 latausIkkunaCallback b = do
                             w <- windowNew (toSize (300,100)) Nothing (Just "Avaa kerho")
@@ -241,6 +257,7 @@ latausIkkunaCallback b = do
                             end w
                             showWidget w
 
+-- Lataa kerhon tiedot kerhon nimeä vastaavista tiedostoista .dat ja .har
 lataaKerho :: Ref Input -> Ref Button -> IO ()
 lataaKerho input b = do
                         ladattavanKerhonNimi <- getValue input
@@ -252,11 +269,13 @@ lataaKerho input b = do
                         jasenetIlmanHarrastuksia <- readIORef valittuKerho
                         lisaaKerhoonHarrastukset kerhonJasenienHarrastukset (jasenet jasenetIlmanHarrastuksia) 
 
+-- Ottaa harrastukset ja indeksit ja asettaa ne vastaaville jäsenille
 lisaaKerhoonHarrastukset :: [(Maybe Int, Harrastus)] -> [Jasen] -> IO ()
 lisaaKerhoonHarrastukset harrastukset jasenet = do
                                                     mapM (kerhonHarrastukset jasenet) harrastukset
                                                     return ()
-                                                    
+
+-- Lisää yhden harrastuksen kerhon jäsenille
 kerhonHarrastukset :: [Jasen] -> (Maybe Int, Harrastus) -> IO ()
 kerhonHarrastukset henkilot (i, harrastus) = do
                                                 case i of 
@@ -265,18 +284,21 @@ kerhonHarrastukset henkilot (i, harrastus) = do
                                                                     kerho <- readIORef valittuKerho
                                                                     modifyIORef valittuKerho (muokkaaJasen (lisaaHarrastus harrastus (henkilot !! x)) x)
 
------------------------------------------------------------------------------------------------------------------------------
+-- Jakaa tiedostosta luettavan tekstin osiin, jotka voidaan laittaa myöhemmin harrastuksille
 tekstiHarrastukseksi :: T.Text -> (Maybe Int, Harrastus)
 tekstiHarrastukseksi teksti = harrastusTekstista (T.splitOn "||" teksti)
 
+-- Apufunktio tekstitHarrastukseksi funktiolle
 harrastusTekstista :: [T.Text] -> (Maybe Int, Harrastus)
 harrastusTekstista teksti = (validoiInt (teksti !! 0), (Harrastus   (validoiTeksti (teksti !! 1))
                                                                     (validoiInt (teksti !! 2))
                                                                     (validoiDouble (teksti !! 3))))
-   
+
+-- Jakaa tekstin osiin jotka voidaan asettaa jäsenen arvoiksi
 tekstiJaseneksi :: T.Text -> Jasen
 tekstiJaseneksi teksti = jasenTekstista (T.splitOn "||" teksti)
 
+-- Syö listan tekstejä ja matchaa ne vastaaviin jäsen datan tietoihin
 jasenTekstista :: [T.Text] -> Jasen
 jasenTekstista tekstit = Jasen  (validoiTeksti (tekstit !! 0))
                                 (validoiJasenenHetu (tekstit !! 1))
@@ -292,28 +314,35 @@ jasenTekstista tekstit = Jasen  (validoiTeksti (tekstit !! 0))
                                 (validoiTeksti (tekstit !! 11))
                                 []
 
+-- Katsoo että teksti ei ole tyhjä merkkijono, jolloin datan kyseinen arvo saa arvokseen Nothing
 validoiTeksti :: T.Text -> Maybe T.Text
-validoiTeksti teksti = case teksti of
+validoiTeksti teksti = case T.strip teksti of
                                 ""  -> Nothing
                                 _   -> Just teksti
 
+-- Tarkistaa että annettu hetu on kelvollinen
 validoiJasenenHetu :: T.Text -> Maybe T.Text
 validoiJasenenHetu teksti = case validoiHetu teksti of
                                     True    -> Just teksti
                                     _       -> Nothing
-                                
+                                    
+-- Tarkistaa että luettu arvo on validi kokonaisluku, tai muuten antaa kyseiselle arvoksi Nothing
 validoiInt :: T.Text -> Maybe Int
 validoiInt teksti = (readMaybe (T.unpack teksti)) :: Maybe Int
 
+-- Tarkistaa että luettu arvo on validi desimaaliluku, tai muuten antaa kyseiselle arvoksi Nothing
 validoiDouble :: T.Text -> Maybe Double
 validoiDouble teksti = (readMaybe (T.unpack teksti)) :: Maybe Double
 
+-- Muuttaa yhden harrastuksen sekä kyseisen harrastuksen jäsenen indeksin kerhossa tekstiksi
 harrastusTekstiksi :: Int -> Harrastus -> T.Text
 harrastusTekstiksi i harrastus = T.append (T.concat [(T.append (T.pack (show i)) "||"), (T.append (mbyToText (laji harrastus)) "||"), (T.append (mbyNumToText (aloitusvuosi harrastus)) "||"), (T.append (mbyNumToText (tuntiaViikossa harrastus)) "||")]) (T.pack "\n")
 
+-- Vertaa onko teksti osa toista tekstiä, hieman turhaa ehkä koska kyseessähän on vain eri nimitys isInfixOf funktiolle, mutta järkeilin että teen siitä erillisen funktion siltä varalta jos muutan hakusysteemi
 vertailu :: T.Text -> T.Text -> Bool
 vertailu a b = T.isInfixOf a b
--- Testaamaton jäsenenpoistofunktio
+
+-- Poistaa jäsenen ylläpidetystä tietorakenteesta, sekä jäsenlistasta
 poistaJasenCallback :: Ref SelectBrowser -> Ref Button -> IO () -- MenuItemBase
 poistaJasenCallback selain b' = do
     line <- getValue selain
@@ -456,25 +485,31 @@ lisaaHarrastusApuCallback laj aloitus tuntia i table window selain b = do
 lineNumberToInt :: LineNumber -> Int
 lineNumberToInt (LineNumber x) = (read (show x)) - 1
 
+-- Tarkistaa kuinka monta jäsentä on piilotettu haulla, ja antaa jäsenen oikean indeksin kerhosta
 jasenenOikeaPaikka :: Int -> IO (Int)
 jasenenOikeaPaikka i = do
                             nakyvat <- readIORef nakyvatJasenet
                             return (i + (length (filter ( == False) (take (i+1) nakyvat))))
 
+-- Antaa korjatun jäsenen paikan kun olemme ottaneet huomioon piilotetut jäsenet, hieman turha funktio kun voimme vain valita jäsenen oikean indeksin ylemmällä funktiolla
 jasenenValinta :: [Jasen] -> Int -> IO (Jasen)
 jasenenValinta listaJasenista i = do
                                     nakyvat <- readIORef nakyvatJasenet
                                     return (jasenenValintaApu listaJasenista nakyvat i)
+
+-- Apufunktio ylemälle
 jasenenValintaApu :: [Jasen] -> [Bool] -> Int -> Jasen
 jasenenValintaApu (x:xs) (y:ys) i = case (y, i) of
                                         (True, 0)   -> x
                                         _           -> case y of
                                                             True    -> jasenenValintaApu xs ys (i-1)
                                                             _       -> jasenenValintaApu xs ys i
---
+
+-- Muuttaa TableCoordinaten kyseisen rivin indeksiksi
 tcToInt :: TableCoordinate -> Int
 tcToInt (TableCoordinate (Row x) y) = (read (show x))
 
+-- Poistaa valitun harrastuksen
 poistaHarrastusCallback :: Ref SelectBrowser -> Ref TableRow -> Ref Button -> IO ()
 poistaHarrastusCallback selain taulu b = do
                                     rivi <- getSelection taulu
@@ -490,7 +525,7 @@ poistaHarrastusCallback selain taulu b = do
                                     writeIORef sortRev False
                                     writeIORef sortLast (-1)
                                     redraw taulu
---
+
 -- Lisätään uusi jäsen oletusarvoilla tietorakenteeseen, sekä päivitetään jäsenlistaa
 lisaaJasenCallback :: Ref SelectBrowser -> Ref Button -> IO ()
 lisaaJasenCallback selain button = do
