@@ -41,7 +41,7 @@ Ihan alkuperäinen suunnitelmani olisi ollut että olisin saanut tehtyä hieman 
 
 
 ### Työssä käytetyt lähteet
-Työn lähteinä on käytetty [fltkhs](http://hackage.haskell.org/package/fltkhs) ja [fltk](https://www.fltk.org/documentation.php) dokumentointia, sekä otettu mallia ja apinoitu fltkhs:lle [tehdyistä](https://github.com/deech/fltkhs-fluid-demos) [demoista](https://github.com/deech/fltkhs-demos). Materiaali on netissä yllättävän vähän dokumentointien lisäksi, joka olikin mielestäni haastavin tekijä koko työn teossa.
+Työn lähteinä on käytetty [fltkhs](http://hackage.haskell.org/package/fltkhs) ja [fltk](https://www.fltk.org/documentation.php) dokumentointia, sekä otettu mallia ja apinoitu fltkhs:lle [tehdyistä](https://github.com/deech/fltkhs-fluid-demos) [demoista](https://github.com/deech/fltkhs-demos). Materiaalia on netissä yllättävän vähän dokumentointien lisäksi, joka olikin mielestäni haastavin tekijä koko työn teossa.
 
 
 ### Ylläpitäjän tarvitsemat tiedot
