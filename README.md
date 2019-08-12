@@ -55,7 +55,7 @@ Src kansiosta löytyvää .fl tiedostoa, joka kääntämisen yhteydessä käänn
 ##### Tiedettyjä oikkuja
 Välillä käynnistäessä ohjelma antaa virheilmoituksen `freeHaskellFunctionPtr: not for me, guv!` ja kaatuu. Syytä tähän en tiedä, mutta ohjelman uudelleenkäynnistäminen toimii. Kääntäjä ei huomaa fluid (.fl) tiedostoon tehtyjä muokkauksia automaattisesti, joten jos muutat jotain siellä joudut myös muuttamaan jotain toista tiedostoa, jotta kääntäjä suostuu kääntämään ohjelman uudestaan.
 ##### Ohjelman käyttäminen
-Ohjelman menubaarista löytyy "Apua" painike, joka antaa tiiviin infopaketin siitä minkälaisia syötteitä tietyt kentät hyväksyvät tallentamaan, jos kyseisellä syötteellä on olemassa jonkinlainen tarkistus olemassa. Paketin mukana tulee myös "malli" kerho, jonka käyttäjä voi ladata kirjoittamalla "Avaa" menupalkista tulevaan ikkunaan "malli" ja painamalla nappia.
+Ohjelman menubaarista löytyy "Apua" painike, joka antaa tiiviin infopaketin siitä minkälaisia syötteitä tietyt kentät hyväksyvät tallentamaan, jos kyseisellä syötteellä on olemassa jonkinlainen tarkistus olemassa. Paketin mukana tulee myös "malli" kerho, jonka käyttäjä voi ladata kirjoittamalla "Avaa" menupalkista tulevaan ikkunaan "malli" ja painamalla nappia. Malli kerho antaa esimerkkejä siitä, minkälaisia syötteitä mitkäkin kentät vaativat, niin hyvässä kuin pahassa.
 
 
 ### Mahdollinen jakokehitys
