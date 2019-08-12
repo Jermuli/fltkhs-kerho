@@ -21,8 +21,8 @@ import Web.Browser
 import System.Exit
 import Control.Exception
 
--- TODO:
--- Pienempi prioriteetti: selvitä miksi redraw ei toimi joissain tapauksissa, lisää harrastusten muokkaus
+-- Tekijä: Jere Pakkanen
+-- Pvm: 12.8.2019
 
 -- Pitää listaa siitä mitkä jäsenistä ovat haun mukaisia jolloin ne näytetään
 nakyvatJasenet :: IORef [Bool]
@@ -38,10 +38,26 @@ avaaTiedotCallback m = do
                             _ <- openBrowser "https://github.com/Jermuli/fltkhs-kerho"
                             return ()
 
--- Luo ikkunan jossa kerrotaan ohjelman käytöstä
+-- Luo ikkunan jossa kerrotaan ohjelman käytöstä (otettu mallia textdisplay-with-colors fltkhs-demosta)
 apuaCallback :: Ref MenuItem -> IO ()
 apuaCallback m = do
-                    return ()
+                    win <- windowNew (toSize (1000,250)) Nothing (Just $ "Käyttöohjeita")
+                    display <- textDisplayNew (toRectangle (20,20,1000-40,250-40)) Nothing
+                    buffer <- textBufferNew Nothing Nothing
+                    setTextsize display (FontSize 18)
+                    setBuffer display (Just buffer)
+                    setText buffer (T.concat [  "Voit ladata uuden kerhon menupainikkseesta \"Avaa\", jos sen nimistä kerhoa ei löydy, se asettaa sen nykyiseksi kerhon nimeksi.\n",
+                                                "Voit vaihtaa kerhon nimeä milloin tahansa \"Muokkaa\" menupainikkseesta.\n",
+                                                "Jäsenen tietokentissä on on tarkistukset seuraavasti: \nnimi ei saa olla tulostumaton merkki (whitespace),\n",
+                                                "hetu on oltava muodossa ppkkvv-xxxx, jossa pp = päivä, kk = kuukausi, vv vuosi ja x mikä tahansa merkki,\n",
+                                                "postinumero on oltava 5 numeroinen luku,\n",
+                                                "puhelinnumerot on oltava 6-10 numeroisia lukuja\n",
+                                                "ja maksetun maksun on oltava pienempi kuin jäsenmaksun\n",
+                                                "Harrastusta lisätessä, jokainen kenttä on täytettävä ja jäsen on oltava valittuna jäsenselaimesta\n",
+                                                "Harrastusten poisto/lisääminen ei tule näkymään heti, vaan käyttäjän on valittava jäsen uudestaan"])
+                    end win
+                    showWidget win
+
 -- Lopettaa ohjelman
 quitCb :: Ref MenuItem -> IO ()
 quitCb _ = exitSuccess
@@ -70,14 +86,14 @@ muokkaaJasenCallback n' h' k' pn' po' kp' tp' ap' lv' jm' mm' l' selain b' = do
             let tarkistamattomatTiedot = [  (n', (validoiNimi nimi)), 
                                             (h', (validoiHetu hetu)),
                                             (k', True),
-                                            (pn', (validoiPostinumero (read (T.unpack postiN) :: Int))), 
+                                            (pn', (validoiPostinumero ((readMaybe (T.unpack postiN)) :: Maybe Int))), 
                                             (po', True),
-                                            (kp', (validoiPuhelin (read (T.unpack kotiP) :: Int))), 
-                                            (tp', (validoiPuhelin (read (T.unpack tyoP) :: Int))), 
-                                            (ap', (validoiPuhelin (read (T.unpack autoP) :: Int))),
+                                            (kp', (validoiPuhelin ((readMaybe (T.unpack kotiP)) :: Maybe Int))), 
+                                            (tp', (validoiPuhelin ((readMaybe (T.unpack tyoP)) :: Maybe Int))), 
+                                            (ap', (validoiPuhelin ((readMaybe (T.unpack autoP)) :: Maybe Int))),
                                             (lv', True),
                                             (jm', True),
-                                            (mm', (validoiMaksu (read (T.unpack maksettuM) :: Double) (read (T.unpack jasenM) :: Double))),
+                                            (mm', (validoiMaksu ((readMaybe (T.unpack maksettuM)) :: Maybe Double) ((readMaybe (T.unpack jasenM)) :: Maybe Double))),
                                             (l', True)]
             
             tarkistetutTiedot <- mapM virheet tarkistamattomatTiedot
@@ -134,7 +150,7 @@ nollaaInput input = do
 labelMustaksi :: Ref Input -> IO ()
 labelMustaksi input = do
                         setLabelcolor input blackColor
-                        redraw input --Jostain syystä tämäkään redraw ei toimi
+                        redraw input
 
 -- Karsii jäsenlistalta jäsenet jotka eivät täytä hakukriteeriä
 hakuCallback :: Ref SelectBrowser -> Ref Choice -> Ref Input -> IO ()
@@ -456,7 +472,7 @@ valitseJasenCallback n' h' k' pn' po' kp' tp' ap' lv' jm' mm' l' table selain = 
                 readIORef rowData >>= setRows table . Rows . length
                 writeIORef sortRev False
                 writeIORef sortLast (-1)
-                redraw table --Tämä redraw toimii 
+                redraw table --Tämä harrastustaulukon redraw toimii
                 return ()
 
 -- Muutetaan jäsenen harrastuksien tiedot muotoon jossa ne voidaan laittaa esille taulukkoon
@@ -509,14 +525,16 @@ lisaaHarrastusApuCallback laj aloitus tuntia i table window selain b = do
                                                                             l <- getValue laj
                                                                             a <- getValue aloitus
                                                                             t <- getValue tuntia
-                                                                            kerho <- readIORef valittuKerho
-                                                                            indeksi <- (jasenenValinta (jasenet kerho) i)
-                                                                            jasenenIndeksi <- (jasenenOikeaPaikka i)
-                                                                            modifyIORef valittuKerho (muokkaaJasen (lisaaHarrastus (Harrastus (Just l) (Just (read (T.unpack a))) (Just (read (T.unpack t)))) indeksi) jasenenIndeksi)
-                                                                            writeIORef rowData (jasenenHarrastukset indeksi)
-                                                                            readIORef rowData >>= setRows table . Rows . length
-                                                                            hide window
-                                                                            redraw table --Jostain syystä ei toimi, jäsen valittava uudestaan jotta taulukko päivittyy
+                                                                            case (l == "") || (a == "") || (t == "") of
+                                                                                True    -> do   return ()
+                                                                                _       -> do   kerho <- readIORef valittuKerho
+                                                                                                indeksi <- (jasenenValinta (jasenet kerho) i)
+                                                                                                jasenenIndeksi <- (jasenenOikeaPaikka i)
+                                                                                                modifyIORef valittuKerho (muokkaaJasen (lisaaHarrastus (Harrastus (Just l) (Just (read (T.unpack a))) (Just (read (T.unpack t)))) indeksi) jasenenIndeksi)
+                                                                                                writeIORef rowData (jasenenHarrastukset indeksi)
+                                                                                                readIORef rowData >>= setRows table . Rows . length
+                                                                                                hide window
+                                                                                                redraw table --Jostain syystä ei toimi, jäsen valittava uudestaan jotta taulukko päivittyy
 
                                                                     
 
@@ -536,7 +554,7 @@ jasenenValinta listaJasenista i = do
                                     nakyvat <- readIORef nakyvatJasenet
                                     return (jasenenValintaApu listaJasenista nakyvat i)
 
--- Apufunktio ylemälle
+-- Apufunktio ylemälle funktiolle
 jasenenValintaApu :: [Jasen] -> [Bool] -> Int -> Jasen
 jasenenValintaApu (x:xs) (y:ys) i = case (y, i) of
                                         (True, 0)   -> x
@@ -570,7 +588,7 @@ poistaHarrastusCallback selain taulu b = do
                                                                         readIORef rowData >>= setRows taulu . Rows . length
                                                                         writeIORef sortRev False
                                                                         writeIORef sortLast (-1)
-                                                                        redraw taulu
+                                                                        redraw taulu -- Tämäkään redraw ei toimi nykyiselle hetkelle (toimii tosin aijemmalle poistolle, jos listaa ei ole päivitetty välissä)
                                                     _               -> return ()
 
 -- Lisätään uusi jäsen oletusarvoilla tietorakenteeseen, sekä päivitetään jäsenlistaa
@@ -591,7 +609,6 @@ lisaaJasenCallback selain button = do
                                                 []))
     
     modifyIORef valittuKerho sortKerho
-    --hakuCallback selain --Ref SelectBrowser -> Ref Choice -> Ref Input -> IO ()
     nakyvat <- readIORef nakyvatJasenet 
     writeIORef nakyvatJasenet (nakyvat ++ [True])
     haetutRivit selain
@@ -785,16 +802,3 @@ autowidth table pad rowData' = do
   -- but table_resized() is unexposed.
   -- setting the row_header flag induces this.
   getRowHeader table >>= setRowHeader table
-
---resize_window :: Ref DoubleWindow -> Ref TableRow -> IO ()
---resize_window window table = do
---  let width = (4 :: Int)
---  (Columns numCols) <- getCols table
---  colWidthTotal <- liftM sum $ mapM (getColWidth table . Column) [0..(numCols - 1)]
---  let totalWidth = width + colWidthTotal + (margin * 2)
---  appWidth <- FL.w
---  if (totalWidth < 200 || totalWidth > appWidth)
---    then return ()
---    else do
---      (x', y', h', _) <- fmap fromRectangle (getRectangle window)
---      resize window $ toRectangle (x',y',totalWidth,h')

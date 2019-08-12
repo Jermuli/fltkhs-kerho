@@ -2,8 +2,9 @@ module Tietorakenteet where
 import Data.List
 import Data.Char
 import qualified Data.Text as T
---import Data.Time.Clock
---import Data.Time.Calendar
+
+-- Tekijä: Jere Pakkanen
+-- Pvm: 12.8.2019
 
 -- Jäsenen tietorakenne
 data Jasen = Jasen { nimi :: Maybe T.Text
@@ -27,6 +28,7 @@ data Harrastus = Harrastus { laji :: Maybe T.Text
 -- Kerhon tietorakenne                            
 data Kerho = Kerho { kerhonNimi :: Maybe T.Text
                    , jasenet :: [Jasen]}
+
 -- Jäsenten järjestäminen nimen mukaan (jäsenlistaa varten)
 instance Ord Jasen where
     compare (Jasen nimi1 _ _ _ _ _ _ _ _ _ _ _ _) (Jasen nimi2 _ _ _ _ _ _ _ _ _ _ _ _) | nimi1 > nimi2 = GT
@@ -42,32 +44,29 @@ validoiHetu he = let unpacked = T.unpack he
                                                 False   -> False
                                 False   -> False
                         _   -> False
-                        
-validoiPostinumero :: Int -> Bool
-validoiPostinumero numero = ((length $ show numero) == 5)
 
+-- Tarkistaa postinumeron
+validoiPostinumero :: Maybe Int -> Bool
+validoiPostinumero numero = case numero of
+                                Just x -> ((length $ show x) == 5)
+                                _      -> False
+
+-- Tarkistaa nimen
 validoiNimi :: T.Text -> Bool
 validoiNimi nimi = not ((T.strip nimi) == (T.pack ""))
---validoiSyntyma :: Int -> IO (Bool)
---validoiSyntyma syntyma = do
---                            nyt <- getCurrentTime
---                            let (vuosi, kk, pv) = toGregorian $ utctDay nyt
---                            syntymavuosi <- syntymaIO syntyma
---                            return (syntymavuosi <= (fromIntegral vuosi))
---                            
---syntymaIO :: Int -> IO (Int)
---syntymaIO syntyma = do
---                        return (syntyma)
+
+-- Tarkistaa puhelinnumeron
+validoiPuhelin :: Maybe Int -> Bool
+validoiPuhelin numero = case numero of
+                            Just x  -> ((6 <= length (show x)) && (10 >= length (show x)))
+                            _       -> False
+
+-- Tarkistaa maksetun maksun
+validoiMaksu :: Maybe Double -> Maybe Double -> Bool
+validoiMaksu maksettu maksu = case (maksettu, maksu) of
+                                    (Just x, Just y)    -> (maksettu <= maksu)
+                                    _                   -> False
                         
-validoiPuhelin :: Int -> Bool
-validoiPuhelin numero = ((6 <= length (show numero)) && (10 >= length (show numero)))
-
-validoiMaksu :: Double -> Double -> Bool
-validoiMaksu maksettu maksu = (maksettu <= maksu)
-
-validoiLiittyminen :: Int -> Int -> Bool
-validoiLiittyminen syntyma liittyminen = (liittyminen >= syntyma)
-                            
 -- Looginen AND listoille
 tarkistaTotuudet :: [Bool] -> Bool
 tarkistaTotuudet [] = True
@@ -115,7 +114,3 @@ lisaaHarrastus harrastus jasen = Jasen (nimi jasen) (hetu jasen) (katuosoite jas
 -- Poistetaan harrastus jäseneltä
 poistaHarrastus :: Harrastus -> Jasen -> Jasen
 poistaHarrastus poistettava jasen = Jasen (nimi jasen) (hetu jasen) (katuosoite jasen) (postinumero jasen) (postiosoite jasen) (kotipuhelin jasen) (tyopuhelin jasen) (autopuhelin jasen) (liittymisvuosi jasen) (jasenmaksu jasen) (maksettu jasen) (lisatieto jasen) (delete poistettava (harrastukset jasen))
-
-
--- Työn alla olevia juttuja
---muokkaaHarrastus :: Harrastus -> Jasen
