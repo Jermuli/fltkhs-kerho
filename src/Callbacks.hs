@@ -21,7 +21,7 @@ import Web.Browser
 import System.Exit
 import Control.Exception
 
--- TODO: Tärkeät: Korjaa harrastusten poistosta tapahtuva kaatuminen lisäämällä tarkistuksia, laita kentät päivittymään paremmin
+-- TODO:
 -- Pienempi prioriteetti: selvitä miksi redraw ei toimi joissain tapauksissa, lisää harrastusten muokkaus
 
 -- Pitää listaa siitä mitkä jäsenistä ovat haun mukaisia jolloin ne näytetään
@@ -38,12 +38,16 @@ avaaTiedotCallback m = do
                             _ <- openBrowser "https://github.com/Jermuli/fltkhs-kerho"
                             return ()
 
+-- Luo ikkunan jossa kerrotaan ohjelman käytöstä
+apuaCallback :: Ref MenuItem -> IO ()
+apuaCallback m = do
+                    return ()
 -- Lopettaa ohjelman
 quitCb :: Ref MenuItem -> IO ()
 quitCb _ = exitSuccess
 
 -- Ottaa jäsenentietokentistä arvot ja tarkistaa ovatko ne oikein, jonka jälkeen päivittää tiedot tietorakenteeseen
-muokkaaJasenCallback :: Ref Input -> Ref Input -> Ref Input -> Ref Input -> Ref Input -> Ref Input -> Ref Input -> Ref Input -> Ref Input -> Ref Input -> Ref Input -> Ref Input -> Ref SelectBrowser -> Ref Button -> IO ()
+muokkaaJasenCallback :: Ref Input -> Ref Input -> Ref Input -> Ref Input -> Ref Input -> Ref Input -> Ref Input -> Ref Input -> Ref Input -> Ref Input -> Ref Input -> Ref Input -> Ref SelectBrowser ->  Ref Button -> IO ()
 muokkaaJasenCallback n' h' k' pn' po' kp' tp' ap' lv' jm' mm' l' selain b' = do
     line <- getValue selain
     sisalla <- displayed selain line
@@ -119,6 +123,12 @@ virheet (input, b) = do
                                     setValue input ""
                                     redraw input
                                     return (False, value)
+                                    
+-- Nollaa inputkentän arvon
+nollaaInput :: Ref Input -> IO ()
+nollaaInput input = do
+                        setValue input ""
+                        return ()
 
 -- Apufunktio, joka muuttaa labelin värin mustaksi                  
 labelMustaksi :: Ref Input -> IO ()
@@ -221,7 +231,7 @@ vaihdaKerhonNimi input w b = do
                                                 hide w
                                                 
 -- Tallentaa kerhon tiedot kahteen tiedostoon: "kerhon nimi".dat joka sisältää jäsenten tiedot sekä "kerhon nimi".har joka sisältää harrastusten tiedot
-tallennaKerho :: Ref MenuItem -> IO ()
+tallennaKerho ::  Ref MenuItem -> IO ()
 tallennaKerho b = do
                 kerho <- readIORef valittuKerho
                 case kerhonNimi kerho of
@@ -259,26 +269,26 @@ jasenenHarrastuksetTekstiksi :: (Int, Jasen) -> T.Text
 jasenenHarrastuksetTekstiksi (i, jasen) = T.concat (map (harrastusTekstiksi i) (harrastukset jasen))
 
 -- Callback joka luo ikkunan jolle voidaan syöttää ladattavan harrastuksen nimi
-latausIkkunaCallback :: Ref MenuItem -> IO ()
-latausIkkunaCallback b = do
-                            latausIkkunanTeko
+latausIkkunaCallback :: Ref Input -> Ref Input -> Ref Input -> Ref Input -> Ref Input -> Ref Input -> Ref Input -> Ref Input -> Ref Input -> Ref Input -> Ref Input -> Ref Input -> Ref SelectBrowser -> Ref Choice -> Ref Input -> Ref MenuItem -> IO ()
+latausIkkunaCallback i0 i1 i2 i3 i4 i5 i6 i7 i8 i9 i10 i11 selain valitsin haku b = do
+                                                                                        latausIkkunanTeko i0 i1 i2 i3 i4 i5 i6 i7 i8 i9 i10 i11 selain valitsin haku
                             
 -- Varsinainen ikkunan teko
-latausIkkunanTeko :: IO ()
-latausIkkunanTeko = do 
+latausIkkunanTeko :: Ref Input -> Ref Input -> Ref Input -> Ref Input -> Ref Input -> Ref Input -> Ref Input -> Ref Input -> Ref Input -> Ref Input -> Ref Input -> Ref Input -> Ref SelectBrowser -> Ref Choice -> Ref Input -> IO ()
+latausIkkunanTeko i0 i1 i2 i3 i4 i5 i6 i7 i8 i9 i10 i11 selain valitsin haku = do 
                         w <- windowNew (toSize (300,100)) Nothing (Just "Avaa kerho")
                         begin w
                         b <-    buttonNew
                                 (Rectangle (Position (X 125) (Y 65)) (Size (Width 50) (Height 30)))
                                 (Just "Avaa")
                         iKohde       <- inputNew (toRectangle (100,30,190,25)) (Just "Kerhon nimi") (Just FlNormalInput)
-                        setCallback b (lataaKerho iKohde w)
+                        setCallback b (lataaKerho iKohde w i0 i1 i2 i3 i4 i5 i6 i7 i8 i9 i10 i11 selain valitsin haku)
                         end w
                         showWidget w
 
 -- Lataa kerhon tiedot kerhon nimeä vastaavista tiedostoista .dat ja .har
-lataaKerho :: Ref Input -> Ref Window -> Ref Button -> IO ()
-lataaKerho input w b = do
+lataaKerho :: Ref Input -> Ref Window -> Ref Input -> Ref Input -> Ref Input -> Ref Input -> Ref Input -> Ref Input -> Ref Input -> Ref Input -> Ref Input -> Ref Input -> Ref Input -> Ref Input -> Ref SelectBrowser -> Ref Choice -> Ref Input -> Ref Button -> IO ()
+lataaKerho input w i0 i1 i2 i3 i4 i5 i6 i7 i8 i9 i10 i11 selain valitsin haku b = do
                         ladattavanKerhonNimi <- getValue input
                         yritaJasenLukua <- try (TIO.readFile ((T.unpack ladattavanKerhonNimi) ++ ".dat")) :: IO (Either SomeException T.Text)
                         yritaHarrastusLukua <- try (TIO.readFile ((T.unpack ladattavanKerhonNimi) ++ ".har")) :: IO (Either SomeException T.Text)
@@ -289,12 +299,16 @@ lataaKerho input w b = do
                             (Right jasenTiedostonSisalto, Left _)   -> do 
                                                                             let kerhonJasenet = map tekstiJaseneksi (init (T.splitOn "\n" jasenTiedostonSisalto))
                                                                             writeIORef valittuKerho (sortKerho (Kerho (Just ladattavanKerhonNimi) kerhonJasenet))
+                                                                            hakuCallback selain valitsin haku
+                                                                            mapM_ nollaaInput [i0,i1, i2, i3, i4, i5, i6, i7, i8, i9, i10, i11]
                                                                             hide w
                             (Right jasenTiedostonSisalto, Right harrastusTiedostonSisalto)  -> do
                                                                                                 let kerhonJasenet = map tekstiJaseneksi (init (T.splitOn "\n" jasenTiedostonSisalto))
                                                                                                 writeIORef valittuKerho (sortKerho (Kerho (Just ladattavanKerhonNimi) kerhonJasenet))
                                                                                                 let kerhonJasenienHarrastukset = map tekstiHarrastukseksi (init (T.splitOn "\n" harrastusTiedostonSisalto))
                                                                                                 mapM_ lisaaKerhoonHarrastukset kerhonJasenienHarrastukset
+                                                                                                hakuCallback selain valitsin haku
+                                                                                                mapM_ nollaaInput [i0,i1, i2, i3, i4, i5, i6, i7, i8, i9, i10, i11]
                                                                                                 hide w
 
 -- Ottaa harrastuksen ja indeksin ja asettaa sen indeksiä vastaavalle kerhon jäsenelle
@@ -537,19 +551,27 @@ tcToInt (TableCoordinate (Row x) y) = (read (show x))
 -- Poistaa valitun harrastuksen
 poistaHarrastusCallback :: Ref SelectBrowser -> Ref TableRow -> Ref Button -> IO ()
 poistaHarrastusCallback selain taulu b = do
-                                    rivi <- getSelection taulu
-                                    tiedot <- readIORef rowData
                                     line <- getValue selain
-                                    kerho <- readIORef valittuKerho
-                                    let currentRow = tiedot !! (tcToInt (fst rivi))
-                                    i <- jasenenOikeaPaikka (lineNumberToInt line)
-                                    valittuJasen <- (jasenenValinta (jasenet kerho) i)
-                                    modifyIORef valittuKerho (muokkaaJasen (poistaHarrastus (Harrastus (Just (currentRow !! 0)) (Just (read (T.unpack(currentRow !! 1)))) (Just (read (T.unpack(currentRow !! 2))))) valittuJasen) i) 
-                                    writeIORef rowData (jasenenHarrastukset valittuJasen)
-                                    readIORef rowData >>= setRows taulu . Rows . length
-                                    writeIORef sortRev False
-                                    writeIORef sortLast (-1)
-                                    redraw taulu
+                                    sisalla <- displayed selain line
+                                    if not sisalla
+                                        then do return ()
+                                        else do
+                                                rivi <- getSelection taulu
+                                                valittu <- getRowSelected taulu (Row (tcToInt (fst rivi)))
+                                                case valittu of
+                                                    (Right True)    -> do
+                                                                        tiedot <- readIORef rowData
+                                                                        kerho <- readIORef valittuKerho
+                                                                        let currentRow = tiedot !! (tcToInt (fst rivi))
+                                                                        i <- jasenenOikeaPaikka (lineNumberToInt line)
+                                                                        valittuJasen <- (jasenenValinta (jasenet kerho) i)
+                                                                        modifyIORef valittuKerho (muokkaaJasen (poistaHarrastus (Harrastus (Just (currentRow !! 0)) (Just (read (T.unpack(currentRow !! 1)))) (Just (read (T.unpack(currentRow !! 2))))) valittuJasen) i) 
+                                                                        writeIORef rowData (jasenenHarrastukset valittuJasen)
+                                                                        readIORef rowData >>= setRows taulu . Rows . length
+                                                                        writeIORef sortRev False
+                                                                        writeIORef sortLast (-1)
+                                                                        redraw taulu
+                                                    _               -> return ()
 
 -- Lisätään uusi jäsen oletusarvoilla tietorakenteeseen, sekä päivitetään jäsenlistaa
 lisaaJasenCallback :: Ref SelectBrowser -> Ref Button -> IO ()
@@ -575,8 +597,8 @@ lisaaJasenCallback selain button = do
     haetutRivit selain
 
 {----------------------------------------------------------------------------------------------------------------
-Tämän viivan alapuolella oleva koodi käsittelee harrastustaulukkoa. Kyseinen koodi on otettu lähes suoraan pienin 
-muutoksin fltkhs demosta "fltkhs-table-sort"
+Tämän viivan alapuolella oleva koodi käsittelee harrastustaulukon rakennetta. Kyseinen koodi on otettu lähes suoraan 
+pienin muutoksin fltkhs demosta "fltkhs-table-sort"
 -----------------------------------------------------------------------------------------------------------------}
 headers :: [T.Text]
 headers = map T.pack ["Harrastus", "aloitusvuosi", "tuntia vko"]
@@ -764,15 +786,15 @@ autowidth table pad rowData' = do
   -- setting the row_header flag induces this.
   getRowHeader table >>= setRowHeader table
 
-resize_window :: Ref DoubleWindow -> Ref TableRow -> IO ()
-resize_window window table = do
-  let width = (4 :: Int)
-  (Columns numCols) <- getCols table
-  colWidthTotal <- liftM sum $ mapM (getColWidth table . Column) [0..(numCols - 1)]
-  let totalWidth = width + colWidthTotal + (margin * 2)
-  appWidth <- FL.w
-  if (totalWidth < 200 || totalWidth > appWidth)
-    then return ()
-    else do
-      (x', y', h', _) <- fmap fromRectangle (getRectangle window)
-      resize window $ toRectangle (x',y',totalWidth,h')
+--resize_window :: Ref DoubleWindow -> Ref TableRow -> IO ()
+--resize_window window table = do
+--  let width = (4 :: Int)
+--  (Columns numCols) <- getCols table
+--  colWidthTotal <- liftM sum $ mapM (getColWidth table . Column) [0..(numCols - 1)]
+--  let totalWidth = width + colWidthTotal + (margin * 2)
+--  appWidth <- FL.w
+--  if (totalWidth < 200 || totalWidth > appWidth)
+--    then return ()
+--    else do
+--      (x', y', h', _) <- fmap fromRectangle (getRectangle window)
+--      resize window $ toRectangle (x',y',totalWidth,h')

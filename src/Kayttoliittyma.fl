@@ -14,7 +14,7 @@ decl {import Data.IORef} {private local
 Function {makeWindow(IO(Ref Window))} {open
 } {
   Fl_Window paaIkkuna {open
-    xywh {494 748 880 496} type Double visible
+    xywh {392 387 880 496} type Double visible
   } {
     Fl_Menu_Bar ylaMenu {open
       xywh {0 0 930 20}
@@ -170,19 +170,7 @@ setInputType liittymisvuosiInput FlIntInput;
 setInputType maksettuMaksuInput FlFloatInput;
 setInputType jasenmaksuInput FlFloatInput;
 
-setCallback tallenna (muokkaaJasenCallback nimiInput hetuInput katuosoiteInput postinmrInput postiosoiteInput kotipuhelinInput tyopuhelinInput autopuhelinInput liittymisvuosiInput jasenmaksuInput maksettuMaksuInput lisatietoInput jasenSelain);
-setCallback uusiJasen (lisaaJasenCallback jasenSelain);
-setCallback poistaJasen (poistaJasenCallback jasenSelain);
-_ <- add ylaMenu "&Tiedosto/&Tallenna" Nothing (Just tallennaKerho) (MenuItemFlags []);
-_ <- add ylaMenu "&Tiedosto/&Avaa" Nothing (Just latausIkkunaCallback) (MenuItemFlags []);
-_ <- add ylaMenu "&Tiedosto/&Lopeta" Nothing (Just quitCb) (MenuItemFlags []);
-_ <- add ylaMenu "&Muokkaa/&Vaihdan kerhon nimi" Nothing (Just vaihdaKerhonNimiCallback) (MenuItemFlags []);
-_ <- add ylaMenu "&Tietoja/&Apua" Nothing (Just quitCb) (MenuItemFlags []);
-_ <- add ylaMenu "&Tietoja/&Tietoja" Nothing (Just avaaTiedotCallback) (MenuItemFlags []);
-
-
-
-
+-- 
 harrastusTable <- tableRowNew (Rectangle(Position (X 550) (Y 40)) (Size (Width 300) (Height 415))) Nothing Nothing (drawCell tableState) defaultCustomWidgetFuncs defaultCustomTableFuncs;
 setColHeader harrastusTable True;
 setColResize harrastusTable True;
@@ -195,12 +183,22 @@ setRowHeightAll harrastusTable 18;
 readIORef rowData >>= autowidth harrastusTable 20;
 setColor harrastusTable whiteColor;
 setCallback harrastusTable (eventCallback tableState);
+--
 
+_ <- add ylaMenu "&Tiedosto/&Tallenna" Nothing (Just tallennaKerho) (MenuItemFlags []);
+_ <- add ylaMenu "&Tiedosto/&Avaa" Nothing (Just (latausIkkunaCallback nimiInput hetuInput katuosoiteInput postinmrInput postiosoiteInput kotipuhelinInput tyopuhelinInput autopuhelinInput liittymisvuosiInput jasenmaksuInput maksettuMaksuInput lisatietoInput jasenSelain hakuValitsin hakuKentta)) (MenuItemFlags []);
+_ <- add ylaMenu "&Tiedosto/&Lopeta" Nothing (Just quitCb) (MenuItemFlags []);
+_ <- add ylaMenu "&Muokkaa/&Vaihdan kerhon nimi" Nothing (Just vaihdaKerhonNimiCallback) (MenuItemFlags []);
+_ <- add ylaMenu "&Tietoja/&Apua" Nothing (Just quitCb) (MenuItemFlags []);
+_ <- add ylaMenu "&Tietoja/&Tietoja" Nothing (Just avaaTiedotCallback) (MenuItemFlags []);
 setCallback hakuKentta (hakuCallback jasenSelain hakuValitsin);
 setCallback poistaHarrastus (poistaHarrastusCallback jasenSelain harrastusTable);
 setCallback jasenSelain (valitseJasenCallback nimiInput hetuInput katuosoiteInput postinmrInput postiosoiteInput kotipuhelinInput tyopuhelinInput autopuhelinInput liittymisvuosiInput jasenmaksuInput maksettuMaksuInput lisatietoInput harrastusTable);
 setCallback lisaaHarrastus (lisaaHarrastusCallback harrastusTable jasenSelain);
-latausIkkunanTeko;} {selected
+setCallback tallenna (muokkaaJasenCallback nimiInput hetuInput katuosoiteInput postinmrInput postiosoiteInput kotipuhelinInput tyopuhelinInput autopuhelinInput liittymisvuosiInput jasenmaksuInput maksettuMaksuInput lisatietoInput jasenSelain);
+setCallback uusiJasen (lisaaJasenCallback jasenSelain);
+setCallback poistaJasen (poistaJasenCallback jasenSelain);
+latausIkkunanTeko nimiInput hetuInput katuosoiteInput postinmrInput postiosoiteInput kotipuhelinInput tyopuhelinInput autopuhelinInput liittymisvuosiInput jasenmaksuInput maksettuMaksuInput lisatietoInput jasenSelain hakuValitsin hakuKentta;} {selected
   }
   code {return paaIkkuna} {}
 }
