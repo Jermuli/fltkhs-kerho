@@ -2,6 +2,8 @@ module Tietorakenteet where
 import Data.List
 import Data.Char
 import qualified Data.Text as T
+--import Data.Time.Clock
+--import Data.Time.Calendar
 
 -- Jäsenen tietorakenne
 data Jasen = Jasen { nimi :: Maybe T.Text
@@ -40,7 +42,32 @@ validoiHetu he = let unpacked = T.unpack he
                                                 False   -> False
                                 False   -> False
                         _   -> False
+                        
+validoiPostinumero :: Int -> Bool
+validoiPostinumero numero = ((length $ show numero) == 5)
 
+validoiNimi :: T.Text -> Bool
+validoiNimi nimi = not ((T.strip nimi) == (T.pack ""))
+--validoiSyntyma :: Int -> IO (Bool)
+--validoiSyntyma syntyma = do
+--                            nyt <- getCurrentTime
+--                            let (vuosi, kk, pv) = toGregorian $ utctDay nyt
+--                            syntymavuosi <- syntymaIO syntyma
+--                            return (syntymavuosi <= (fromIntegral vuosi))
+--                            
+--syntymaIO :: Int -> IO (Int)
+--syntymaIO syntyma = do
+--                        return (syntyma)
+                        
+validoiPuhelin :: Int -> Bool
+validoiPuhelin numero = ((6 <= length (show numero)) && (10 >= length (show numero)))
+
+validoiMaksu :: Double -> Double -> Bool
+validoiMaksu maksettu maksu = (maksettu <= maksu)
+
+validoiLiittyminen :: Int -> Int -> Bool
+validoiLiittyminen syntyma liittyminen = (liittyminen >= syntyma)
+                            
 -- Looginen AND listoille
 tarkistaTotuudet :: [Bool] -> Bool
 tarkistaTotuudet [] = True
@@ -81,18 +108,6 @@ muokkaaJasenApu uudettiedot paikka []       = []
 muokkaaJasenApu uudettiedot paikka (x:xs)   = case paikka of
                                                 0   -> (uudettiedot:xs)
                                                 _   -> (x:(muokkaaJasenApu uudettiedot (paikka - 1) xs))
--- Muuttaa jäsenen tiedot tekstiksi, ei käytetä tällähetkellä, koska ääkköset eivät näytä kääntyvän oikein tätä käyttäessä
---jasenTekstiksi :: Show a => Jasen -> (Jasen -> Maybe a) -> T.Text
---jasenTekstiksi jasen f = case f jasen of
---                            Nothing ->  T.pack " "
---                            Just x  ->  T.pack (show x)
-
---lisaaKerhoonHarrastukset :: Kerho -> [(Int, Harrastus)] -> Kerho
---lisaaKerhoonHarrastukset kerho lajit = Kerho (kerhonNimi kerho) (lisaaJasenilleHarrastukset (jasenet kerho) lajit)
---
---lisaaJasenilleHarrastukset :: [Jasen] -> [(Int, Harrastus)] -> [Jasen]
---lisaaJasenilleHarrastukset ihmiset [(i, laji)] = 
-
 -- Lisätään harrastus jäsenelle
 lisaaHarrastus :: Harrastus -> Jasen -> Jasen
 lisaaHarrastus harrastus jasen = Jasen (nimi jasen) (hetu jasen) (katuosoite jasen) (postinumero jasen) (postiosoite jasen) (kotipuhelin jasen) (tyopuhelin jasen) (autopuhelin jasen) (liittymisvuosi jasen) (jasenmaksu jasen) (maksettu jasen) (lisatieto jasen) ((harrastukset jasen) ++ [harrastus])

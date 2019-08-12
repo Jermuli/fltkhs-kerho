@@ -13,8 +13,8 @@ decl {import Data.IORef} {private local
 
 Function {makeWindow(IO(Ref Window))} {open
 } {
-  Fl_Window paaIkkuna {open selected
-    xywh {209 130 880 496} type Double visible
+  Fl_Window paaIkkuna {open
+    xywh {494 748 880 496} type Double visible
   } {
     Fl_Menu_Bar ylaMenu {open
       xywh {0 0 930 20}
@@ -199,6 +199,8 @@ setCallback harrastusTable (eventCallback tableState);
 setCallback hakuKentta (hakuCallback jasenSelain hakuValitsin);
 setCallback poistaHarrastus (poistaHarrastusCallback jasenSelain harrastusTable);
 setCallback jasenSelain (valitseJasenCallback nimiInput hetuInput katuosoiteInput postinmrInput postiosoiteInput kotipuhelinInput tyopuhelinInput autopuhelinInput liittymisvuosiInput jasenmaksuInput maksettuMaksuInput lisatietoInput harrastusTable);
-setCallback lisaaHarrastus (lisaaHarrastusCallback harrastusTable jasenSelain);} {}
+setCallback lisaaHarrastus (lisaaHarrastusCallback harrastusTable jasenSelain);
+latausIkkunanTeko;} {selected
+  }
   code {return paaIkkuna} {}
 }

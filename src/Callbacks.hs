@@ -19,9 +19,10 @@ import Data.List hiding (sort, insert)
 import Data.Function
 import Web.Browser
 import System.Exit
+import Control.Exception
 
--- TODO: Tärkeät: Korjaa harrastusten poistosta tapahtuva kaatuminen lisäämällä tarkistuksia, lisää tarkistus ladattavan tiedoston nimeen, laita kentät päivittymään paremmin, tee kerhon nimeä kysyvä ikkuna heti ohjelman avauduttua
--- Pienempi prioriteetti: tee paremmat tarkistukset jäsenen infonsyöttöön, selvitä miksi redraw ei toimi joissain tapauksissa, lisää harrastusten muokkaus
+-- TODO: Tärkeät: Korjaa harrastusten poistosta tapahtuva kaatuminen lisäämällä tarkistuksia, laita kentät päivittymään paremmin
+-- Pienempi prioriteetti: selvitä miksi redraw ei toimi joissain tapauksissa, lisää harrastusten muokkaus
 
 -- Pitää listaa siitä mitkä jäsenistä ovat haun mukaisia jolloin ne näytetään
 nakyvatJasenet :: IORef [Bool]
@@ -62,65 +63,69 @@ muokkaaJasenCallback n' h' k' pn' po' kp' tp' ap' lv' jm' mm' l' selain b' = do
             maksettuM   <- (getValue mm')
             lisa        <- (getValue l' )
             
-            if not ((validoiHetu hetu) && (nimi /= "") && (katu /= "") && (postiO /= "") && (postiN /= "") && (kotiP /= "") && (tyoP /= "") && (autoP /= "") && (liittymis /= "") && (jasenM /= "") && (maksettuM /= ""))
-                then do
-                        mapM virheet [n', k', pn', po', kp', tp', ap', lv', jm', mm']
-                        case validoiHetu hetu of 
-                            False   -> do   
-                                            setLabelcolor h' redColor
-                                            redraw h'
-                            _       -> do 
-                                            labelMustaksi h'
-                        return ()
-                else do   
-                        labelMustaksi h' 
-                        labelMustaksi n' 
-                        labelMustaksi k' 
-                        labelMustaksi pn'
-                        labelMustaksi po'
-                        labelMustaksi kp'
-                        labelMustaksi tp'
-                        labelMustaksi ap'
-                        labelMustaksi lv'
-                        labelMustaksi jm'
-                        labelMustaksi mm'
-                        kerho <- (readIORef valittuKerho)
-                        indeksi <- (jasenenOikeaPaikka (lineNumberToInt line))
-                        valittuJasen <- (jasenenValinta (jasenet kerho) (lineNumberToInt line))
-                        modifyIORef valittuKerho (muokkaaJasen  (Jasen  (Just nimi) 
-                                                                        (Just hetu)
-                                                                        (Just katu)
-                                                                        (Just (read (T.unpack postiN) :: Int))
-                                                                        (Just postiO) 
-                                                                        (Just (read (T.unpack kotiP) :: Int))
-                                                                        (Just (read (T.unpack tyoP) :: Int))
-                                                                        (Just (read (T.unpack autoP) :: Int))
-                                                                        (Just (read (T.unpack liittymis) :: Int))
-                                                                        (Just (read (T.unpack jasenM) :: Double))
-                                                                        (Just (read (T.unpack maksettuM) :: Double))
-                                                                        (Just lisa)
-                                                                        (harrastukset valittuJasen))
-                                                                        indeksi)
-                        remove selain line
-                        insert selain line nimi
-                        modifyIORef valittuKerho sortKerho
-                        haetutRivit selain
+            let tarkistamattomatTiedot = [  (n', (validoiNimi nimi)), 
+                                            (h', (validoiHetu hetu)),
+                                            (k', True),
+                                            (pn', (validoiPostinumero (read (T.unpack postiN) :: Int))), 
+                                            (po', True),
+                                            (kp', (validoiPuhelin (read (T.unpack kotiP) :: Int))), 
+                                            (tp', (validoiPuhelin (read (T.unpack tyoP) :: Int))), 
+                                            (ap', (validoiPuhelin (read (T.unpack autoP) :: Int))),
+                                            (lv', True),
+                                            (jm', True),
+                                            (mm', (validoiMaksu (read (T.unpack maksettuM) :: Double) (read (T.unpack jasenM) :: Double))),
+                                            (l', True)]
+            
+            tarkistetutTiedot <- mapM virheet tarkistamattomatTiedot
+            if (T.strip nimi == "")
+                then do return ()
+                else do 
+                    kerho <- (readIORef valittuKerho)
+                    indeksi <- (jasenenOikeaPaikka (lineNumberToInt line))
+                    valittuJasen <- (jasenenValinta (jasenet kerho) (lineNumberToInt line))
+                    modifyIORef valittuKerho (muokkaaJasen  (Jasen  (uncurry validoiTeksti (tarkistetutTiedot !! 0))
+                                                                    (validoiJasenenHetu (snd (tarkistetutTiedot !! 1)))
+                                                                    (uncurry validoiTeksti (tarkistetutTiedot !! 2))
+                                                                    (uncurry validoiInt (tarkistetutTiedot !! 3))
+                                                                    (uncurry validoiTeksti (tarkistetutTiedot !! 4))
+                                                                    (uncurry validoiInt (tarkistetutTiedot !! 5))
+                                                                    (uncurry validoiInt (tarkistetutTiedot !! 6))
+                                                                    (uncurry validoiInt (tarkistetutTiedot !! 7))
+                                                                    (uncurry validoiInt (tarkistetutTiedot !! 8))
+                                                                    (uncurry validoiDouble (tarkistetutTiedot !! 9))
+                                                                    (uncurry validoiDouble (tarkistetutTiedot !! 10))
+                                                                    (uncurry validoiTeksti (tarkistetutTiedot !! 11))
+                                                                    (harrastukset valittuJasen))
+                                                                    indeksi)
+                    remove selain line
+                    insert selain line nimi
+                    modifyIORef valittuKerho sortKerho
+                    haetutRivit selain
 
+-- Tarkistaa onko merkkijono pelkkää tyhjää
+onkoTyhja :: T.Text -> Bool
+onkoTyhja teksti = not ((T.strip teksti) == "")
 
 --Tarkistaa onko kenttään annettu arvo, mahdollisesti lisätään parametriksi funktio, jota käytetään arvon tarkastukseen
-virheet :: Ref Input -> IO ()
-virheet input = do 
-                    arvo <- getValue input
-                    case T.strip arvo of
-                        ""  -> do   setLabelcolor input redColor
+virheet :: (Ref Input, Bool) -> IO (Bool, T.Text)
+virheet (input, b) = do 
+                        if b
+                            then do 
+                                    value <- getValue input
+                                    return (True, value)
+                            else do 
+                                    setLabelcolor input redColor
+                                    value <- getValue input
+                                    setValue input ""
                                     redraw input
-                        _   -> do return ()
+                                    return (False, value)
 
 -- Apufunktio, joka muuttaa labelin värin mustaksi                  
 labelMustaksi :: Ref Input -> IO ()
 labelMustaksi input = do
                         setLabelcolor input blackColor
                         redraw input --Jostain syystä tämäkään redraw ei toimi
+
 -- Karsii jäsenlistalta jäsenet jotka eivät täytä hakukriteeriä
 hakuCallback :: Ref SelectBrowser -> Ref Choice -> Ref Input -> IO ()
 hakuCallback selain valitsin haku = do
@@ -173,11 +178,11 @@ haetutRivit selain = do
                         nakyvat <- readIORef nakyvatJasenet
                         if (nakyvat == [])
                             then do
-                                mapM ((add selain) . mbyToText . nimi) (jasenet kerho)
+                                mapM_ ((add selain) . mbyToText . nimi) (jasenet kerho)
                                 return ()
                             else do
                                 let naytettavat = zip (jasenet kerho) nakyvat
-                                mapM (haetutRivitApu selain) naytettavat
+                                mapM_ (haetutRivitApu selain) naytettavat
                                 return ()
 
 -- Apufunktio ylemmälle funktiolle, vertailee täyttääkö yksin jäsen hakuvaatimukset
@@ -256,28 +261,41 @@ jasenenHarrastuksetTekstiksi (i, jasen) = T.concat (map (harrastusTekstiksi i) (
 -- Callback joka luo ikkunan jolle voidaan syöttää ladattavan harrastuksen nimi
 latausIkkunaCallback :: Ref MenuItem -> IO ()
 latausIkkunaCallback b = do
-                            w <- windowNew (toSize (300,100)) Nothing (Just "Avaa kerho")
-                            begin w
-                            b <-    buttonNew
-                                    (Rectangle (Position (X 125) (Y 65)) (Size (Width 50) (Height 30)))
-                                    (Just "Avaa")
-                            iKohde       <- inputNew (toRectangle (100,30,190,25)) (Just "Kerhon nimi") (Just FlNormalInput)
-                            setCallback b (lataaKerho iKohde w)
-                            end w
-                            showWidget w
+                            latausIkkunanTeko
+                            
+-- Varsinainen ikkunan teko
+latausIkkunanTeko :: IO ()
+latausIkkunanTeko = do 
+                        w <- windowNew (toSize (300,100)) Nothing (Just "Avaa kerho")
+                        begin w
+                        b <-    buttonNew
+                                (Rectangle (Position (X 125) (Y 65)) (Size (Width 50) (Height 30)))
+                                (Just "Avaa")
+                        iKohde       <- inputNew (toRectangle (100,30,190,25)) (Just "Kerhon nimi") (Just FlNormalInput)
+                        setCallback b (lataaKerho iKohde w)
+                        end w
+                        showWidget w
 
 -- Lataa kerhon tiedot kerhon nimeä vastaavista tiedostoista .dat ja .har
 lataaKerho :: Ref Input -> Ref Window -> Ref Button -> IO ()
 lataaKerho input w b = do
                         ladattavanKerhonNimi <- getValue input
-                        jasenTiedostonSisalto <- TIO.readFile ((T.unpack ladattavanKerhonNimi) ++ ".dat")
-                        let kerhonJasenet = map tekstiJaseneksi (init (T.splitOn "\n" jasenTiedostonSisalto))
-                        harrastusTiedostonSisalto <- TIO.readFile ((T.unpack ladattavanKerhonNimi) ++ ".har")
-                        writeIORef valittuKerho (sortKerho (Kerho (Just ladattavanKerhonNimi) kerhonJasenet))
-                        let kerhonJasenienHarrastukset = map tekstiHarrastukseksi (init (T.splitOn "\n" harrastusTiedostonSisalto))
-                        kerhoIlmanHarrastuksia <- readIORef valittuKerho
-                        mapM_ lisaaKerhoonHarrastukset kerhonJasenienHarrastukset
-                        hide w
+                        yritaJasenLukua <- try (TIO.readFile ((T.unpack ladattavanKerhonNimi) ++ ".dat")) :: IO (Either SomeException T.Text)
+                        yritaHarrastusLukua <- try (TIO.readFile ((T.unpack ladattavanKerhonNimi) ++ ".har")) :: IO (Either SomeException T.Text)
+                        case (yritaJasenLukua, yritaHarrastusLukua) of
+                            (Left _, _)                    -> do
+                                                                        modifyIORef valittuKerho (vaihdaKerhonNimea ladattavanKerhonNimi)
+                                                                        hide w
+                            (Right jasenTiedostonSisalto, Left _)   -> do 
+                                                                            let kerhonJasenet = map tekstiJaseneksi (init (T.splitOn "\n" jasenTiedostonSisalto))
+                                                                            writeIORef valittuKerho (sortKerho (Kerho (Just ladattavanKerhonNimi) kerhonJasenet))
+                                                                            hide w
+                            (Right jasenTiedostonSisalto, Right harrastusTiedostonSisalto)  -> do
+                                                                                                let kerhonJasenet = map tekstiJaseneksi (init (T.splitOn "\n" jasenTiedostonSisalto))
+                                                                                                writeIORef valittuKerho (sortKerho (Kerho (Just ladattavanKerhonNimi) kerhonJasenet))
+                                                                                                let kerhonJasenienHarrastukset = map tekstiHarrastukseksi (init (T.splitOn "\n" harrastusTiedostonSisalto))
+                                                                                                mapM_ lisaaKerhoonHarrastukset kerhonJasenienHarrastukset
+                                                                                                hide w
 
 -- Ottaa harrastuksen ja indeksin ja asettaa sen indeksiä vastaavalle kerhon jäsenelle
 lisaaKerhoonHarrastukset :: (Maybe Int, Harrastus) -> IO ()
@@ -294,9 +312,9 @@ tekstiHarrastukseksi teksti = harrastusTekstista (T.splitOn "||" teksti)
 
 -- Apufunktio tekstitHarrastukseksi funktiolle
 harrastusTekstista :: [T.Text] -> (Maybe Int, Harrastus)
-harrastusTekstista teksti = (validoiInt (teksti !! 0), (Harrastus   (validoiTeksti (teksti !! 1))
-                                                                    (validoiInt (teksti !! 2))
-                                                                    (validoiDouble (teksti !! 3))))
+harrastusTekstista teksti = (validoiInt True (teksti !! 0), (Harrastus  (validoiTeksti True (teksti !! 1))
+                                                                        (validoiInt True (teksti !! 2))
+                                                                        (validoiDouble True (teksti !! 3))))
 
 -- Jakaa tekstin osiin jotka voidaan asettaa jäsenen arvoiksi
 tekstiJaseneksi :: T.Text -> Jasen
@@ -304,25 +322,25 @@ tekstiJaseneksi teksti = jasenTekstista (T.splitOn "||" teksti)
 
 -- Syö listan tekstejä ja matchaa ne vastaaviin jäsen datan tietoihin
 jasenTekstista :: [T.Text] -> Jasen
-jasenTekstista tekstit = Jasen  (validoiTeksti (tekstit !! 0))
+jasenTekstista tekstit = Jasen  (validoiTeksti True (tekstit !! 0))
                                 (validoiJasenenHetu (tekstit !! 1))
-                                (validoiTeksti (tekstit !! 2))
-                                (validoiInt (tekstit !! 3))
-                                (validoiTeksti (tekstit !! 4))
-                                (validoiInt (tekstit !! 5))
-                                (validoiInt (tekstit !! 6))
-                                (validoiInt (tekstit !! 7))
-                                (validoiInt (tekstit !! 8))
-                                (validoiDouble (tekstit !! 9))
-                                (validoiDouble (tekstit !! 10))
-                                (validoiTeksti (tekstit !! 11))
+                                (validoiTeksti True (tekstit !! 2))
+                                (validoiInt True (tekstit !! 3))
+                                (validoiTeksti True (tekstit !! 4))
+                                (validoiInt True (tekstit !! 5))
+                                (validoiInt True (tekstit !! 6))
+                                (validoiInt True (tekstit !! 7))
+                                (validoiInt True (tekstit !! 8))
+                                (validoiDouble True (tekstit !! 9))
+                                (validoiDouble True (tekstit !! 10))
+                                (validoiTeksti True (tekstit !! 11))
                                 []
 
 -- Katsoo että teksti ei ole tyhjä merkkijono, jolloin datan kyseinen arvo saa arvokseen Nothing
-validoiTeksti :: T.Text -> Maybe T.Text
-validoiTeksti teksti = case T.strip teksti of
-                                ""  -> Nothing
-                                _   -> Just teksti
+validoiTeksti :: Bool -> T.Text -> Maybe T.Text
+validoiTeksti totuus teksti = case (not ((T.strip teksti) == "")) || totuus  of
+                                False  -> Nothing
+                                _      -> Just teksti
 
 -- Tarkistaa että annettu hetu on kelvollinen
 validoiJasenenHetu :: T.Text -> Maybe T.Text
@@ -331,12 +349,16 @@ validoiJasenenHetu teksti = case validoiHetu teksti of
                                     _       -> Nothing
                                     
 -- Tarkistaa että luettu arvo on validi kokonaisluku, tai muuten antaa kyseiselle arvoksi Nothing
-validoiInt :: T.Text -> Maybe Int
-validoiInt teksti = (readMaybe (T.unpack teksti)) :: Maybe Int
+validoiInt :: Bool -> T.Text -> Maybe Int
+validoiInt totuus teksti = case (totuus, ((readMaybe (T.unpack teksti)) :: Maybe Int)) of
+                                (True, Just x)  -> Just x
+                                _               -> Nothing
 
 -- Tarkistaa että luettu arvo on validi desimaaliluku, tai muuten antaa kyseiselle arvoksi Nothing
-validoiDouble :: T.Text -> Maybe Double
-validoiDouble teksti = (readMaybe (T.unpack teksti)) :: Maybe Double
+validoiDouble :: Bool -> T.Text -> Maybe Double
+validoiDouble totuus teksti = case (totuus, ((readMaybe (T.unpack teksti)) :: Maybe Double)) of
+                                (True, Just x)  -> Just x
+                                _               -> Nothing
 
 -- Muuttaa yhden harrastuksen sekä kyseisen harrastuksen jäsenen indeksin kerhossa tekstiksi
 harrastusTekstiksi :: Int -> Harrastus -> T.Text
@@ -357,7 +379,6 @@ poistaJasenCallback selain b' = do
             valittuJasen <- (jasenenOikeaPaikka (lineNumberToInt line))
             modifyIORef valittuKerho (poistaJasen valittuJasen)
             remove selain line
-
 
 -- Valitsemalla jäsen listasta päivittää tiedonlisäyskentät sekä harrastustaulukon
 valitseJasenCallback :: Ref Input -> Ref Input -> Ref Input -> Ref Input -> Ref Input -> Ref Input -> Ref Input -> Ref Input -> Ref Input -> Ref Input -> Ref Input -> Ref Input -> Ref TableRow -> Ref SelectBrowser -> IO ()
@@ -380,7 +401,7 @@ valitseJasenCallback n' h' k' pn' po' kp' tp' ap' lv' jm' mm' l' table selain = 
                 labelMustaksi mm'
                 kerho   <- (readIORef valittuKerho)
                 valittuJasen <- (jasenenValinta (jasenet kerho) (lineNumberToInt line))
-                setValue n' (case nimi valittuJasen of --jasenTekstiksi nimi ((jasenet kerho) !! (lineNumberToInt line)) 
+                setValue n' (case nimi valittuJasen of
                                     Just x  -> x
                                     Nothing -> T.pack "")
                 setValue h' (case hetu valittuJasen of
