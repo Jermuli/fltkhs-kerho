@@ -1,9 +1,13 @@
 # fltkhs-kerho
 
+
 ## Itsearviointi ja jälkiselvitys
+
 
 ### Tiivistelmä ohjelmointityöstä
 Ohjelmointityö kurssille TIEA306 tehty [kerho-ohjelma](http://users.jyu.fi/~vesal/ohj2/) toteutus käyttäen haskell:ia
+
+
 ###### Sisällysluettelo
 [Tehtävän kuva, tausta ja tavoitteet](#tehtava)
 [Käytännön toteutus](#toteutus)
@@ -14,21 +18,26 @@ Ohjelmointityö kurssille TIEA306 tehty [kerho-ohjelma](http://users.jyu.fi/~ves
 [Yhteenveto](#yhteenveto)
 [Suunnitelma](#suunnitelma)
 
+
 <a name="tehtava"/>
 ### Tehtävän kuvaus, tausta ja tavoitteet
 Tehtävänä oli luoda kopio vesan tekemästä [kerho-ohjelmasta](http://users.jyu.fi/~vesal/ohj2/) käyttäen kielenä haskell:ia. Valitsin aiheen, koska mielestäni haskell on mielenkiintoinen kieli ja halusin selvittää miten osaisin toteuttaa sillä ihan omin neuvoin interaktiivisen ohjelman. Tavoitteeni oli saada aikaiseksi ohjelma, joka täyttäisi vesan vastaavan ohjelman perusominaisuudet
+
 
 <a name="toteutus"/>
 ### Käytännön toteutus
 Ohjelman lähdekoodi muodostuu 4 komponentista: fltkhs-kerho.hs (eli main), joka kutsuu fluid tiedostossa määriteltyä käyttöliittymää. Fluid tiedosto Kayttoliittyma.fl joka määrittelee käyttöliittymän ulkonäön (tämän tiedoston editoinnista/tarkastelusta lisää myöhemmin). Callbacks.hs joka sisältää kaikki eventtien eli callbackkien kutsumat toiminnot, sekä pitää yllä tietorakennetta, jota se muokkaa käyttöliittymästä saatujen inputtien mukaan, sekä hoitaa tiedostoihin tallentamisen ja tiedostojen avaamisen, eli lyhyesti, hoitaa reagoinnin ohjelman käyttäjän toimintaan. Ja lopuksi Tietorakenteet.hs, joka määrittelee tietorakenteet ja sisältää tietorakenteiden muokkaamiseen ja tarkistamiseen käytettäviä funktioita. Kaikki neljä tiedostoa ovat minun itseni kirjoittamia, mutta Callback.hs sisältää harrastusten infotaulukon, joka on otettu fltkhs tekijän demosta pienin muokkauksin (kyseinen on selkeästi eroteltu ja merkitty lähdekoodiin, sekä julkaistu MIT-lisenssin alla, joka käytännössä antaa minulle vapaat kädet sen käyttöön).
 
+
 <a name="arviointi"/>
 ### Oman työn arviointi
 Ihan alkuperäinen suunnitelmani olisi ollut että olisin saanut tehtyä hieman nätimmän ja paremman ohjelman (jouduin karsimaan alkuperäisestä ohjelmasta löytyvän tulostamisen ja harrastusten muokkaamisen. Myös harrastustaulukon päivittyminen heti harrastuksen poiston/lisäämisen jälkeen jäi uupumaan. Tietorakenne kyllä päivittyy heti, mutta jäsen joudutaan valitsemaan uudestaan tai poistamaan/lisäämään toinen harrastus, jotta itse lista päivittyisi, syytä sille miksei redraw komenno toimi en tosin tiedä) Myös Jäsenten harrastuksia listaavan taulukon sort ei toimi kunnolla muussa kun lajin kohdassa. Aloitusvuoden ja h/vko kohtien osalla numeroita verrataan myös teksteinä, joten esimerkiksi 11 tulee ennen 9, vaikka järjestys olisi nouseva. Myös ulkonäöllisesti ohjelma ei ole mitään silmäkarkkia, mutta jos fltkhs perustuu n. 20 vuotta vanhaan fltk, en tiedä voinko parempaan odottaakkaan. Eniten vaikeuksia tuotti lähdemateriaalin puute. FLTKHS dokumentointi on ainakin minusta hieman nihkeää. Funktioista annetaan vaan nimet ja syötteiden tyyppi, eikä mitään esimerkkiä tai selitystä miten ne toimivat. Joissain tapauksissa tämä riittää, mutta itse huomasin että jouduin kokeilemaan tekikö funktio sitä mitä oletin sen nimen perusteella tekevän. Mielestäni tämä ei ole hyvää ajankäyttöä. Myös haskellin tyyppisysteemi tuotti välillä ongelmia, mutta suurimmasta osasta ajasta se oli tielläni ihan syystä, ja myönnän että kyseinen auttaa karsimaan virheitä huomattavasti. Suurin ongelma tyyppien kanssa on erityisesti String ja Text tyypin kanssa. Puolet kääntämisessä saamista virheilmoituksista tulivat näistä, ja pyrin vielä pysymään vain Text:issä, koska käyttöliittymä tuki sitä. Hyvänä esimerkkinä tästä on se että TEXT paketin tiedostosta luku tahtoo tiedoston sijainnin String:inä eikä tekstinä, enkä voi vain käsittää miksi. Yksi tyyppi teksteille on tarpeeksi. Odotin että fltkhs tulisi olemaan suurin ongelmienlähde, mutta yllätykseni paketti itsessään on aivan mainio väline, jahka alkukankeudesta päästiin eroon. Olen etsinyt ohjelmastani tapoja joilla sen saisi kaatumaan toistettavasti ja olen pyrkinyt paikkaamaan niitä. Ainoat kaatumiset joista tiedän, johtuvat siitä jos kerhojen tallennustiedostoja käydään manuaalisesti muuttamassa ja yritetään sen jälkeen ladata niitä. Voi olla että harrastuksien poistoon on jäänyt vieläkin jokin kaatumisen aiheuttava bugi, mutta mielestäni kyseiset olen jo metsästänyt läpi, tosin en ole varma, koska suurinosa kyseisestä koodista ei ole minun kirjoittamaa, ja sen toiminta on osin minulle vieläkin mysteeri. Työkalut eivät nyt mitenkään erityisesti haitanneet tai auttaneet minua työssä, paitsi fluid. Ajattelin aluksi että GUI designer ohjelma olisi todella kätevä työtä tehdessä, mutta se aika mitä säästin komponenttien asettelussa, jouduin käyttämään moninkertaisesti saadakseni fluidissa laitetut komponentit toimimaan halutusti. Aikataulu oli ISOIN akilleenkantapääni ylivoimaisesti. Pyysin aihetta joulukuussa, enkä ollut käytännössä saanut mitään aikaiseksi vielä huhtikuussa, ja huhti-toukokuu väli oli myös hyvin hiljaista työn teon osalta. Kesäkuussa sain hyvin tuulta työni purjeisiin, mutta silloinkin kun jäin pahaan paikkaan työni edistyminen tyssäsi taas. Vasta heinäkuussa sain todella työtä edistettyä, ja sen jälkeen työtahtini onkin mielestäni ollut ihan hyvää, aloitukseni oli vaan suoraan sanottuna aivan kamala. Olen koko yliopistoajan ollut todella huono tekemään asioita ajallaan ja jätänkin ne yleensä viime tinkaan. Pitäisi petrata paljon tältä osastolta ja vaan yrittää pakottaa itseni tekemään asioita, kun saan edes vähän edistyttyä niin jatkaminen on helppoa. Verrattuna kursseilla opetettuun ja kirjallisuuteen mielestäni työn käytännössä tekeminen (ainakin näin sooloprojektina) on huomattavasti hektisempää mitä on annettu odottaa. Kursseilla on mielestäni annettu ohjelmoinnista sellainen kuva että sinulla on suunnitelma jonka mukaan teet ja ohjelma rakentuu pikkuhiljaa pala palaltaan kokoon. Omassa työskentelyssäni huomasin että olen koodannut itseni umpikujaan ja jouduin purkamaan aijempia rakennelmia ja tekemään tilalle uusia, tai yrittää saada vanhat viritelmät toimimaan jollain uudella tavalla, joka silloin tällöin johti siihen että jouduin myöhemmin tekemään vielä ihmeellisempiä viritelmiä, jotta saisin työni toimimaan.
 
+
 <a name="lähteet"/>
 ### Työssä käytetyt lähteet
 Työn lähteinä on käytetty [fltkhs](http://hackage.haskell.org/package/fltkhs) ja [fltk](https://www.fltk.org/documentation.php) dokumentointia, sekä otettu mallia ja apinoitu fltkhs:lle [tehdyistä](https://github.com/deech/fltkhs-fluid-demos) [demoista](https://github.com/deech/fltkhs-demos). Materiaali on netissä yllättävän vähän dokumentointien lisäksi, joka olikin mielestäni haastavin tekijä koko työn teossa.
+
 
 <a name="ylläpidolle"/>
 ### Ylläpitäjän tarvitsemat tiedot
@@ -44,13 +53,16 @@ Välillä käynnistäessä ohjelma antaa virheilmoituksen `freeHaskellFunctionPt
 ##### Ohjelman käyttäminen
 Ohjelman menubaarista löytyy "Apua" painike, joka antaa tiiviin infopaketin siitä minkälaisia syötteitä tietyt kentät hyväksyvät tallentamaan, jos kyseisellä syötteellä on olemassa jonkinlainen tarkistus olemassa. Paketin mukana tulee myös "malli" kerho, jonka käyttäjä voi ladata kirjoittamalla "Avaa" menupalkista tulevaan ikkunaan "malli" ja painamalla nappia.
 
+
 <a name="jatkokehitys"/>
 ### Mahdollinen jakokehitys
 Jos joku tahtoo jatkaa kyseistä projektia, seuraava luonnollinen vaihe olisi tietenkin korjata pari ohjelmasta löytyvää vikaa ja implementoida alkuperäisestä kerho-ohjelmasta lötyvät, mutta tästä puuttuvat toiminnot työhön. Myös fltkhs themeihin tutustumalla, voi käyttöliittymästä saada vähän parempaa silmäkarkkia, mutta mielestäni kirjoitushetkellä kyseisiä ei olla vielä kauheasti implementoitu paketin tekijän osalta
 
+
 <a name="yhteenveto"/>
 ### Yhteenveto
 Tekemällä oppii parhaiten, vaikka se vaatiikin myös eniten työtä. Mielestäni tällaisillä tekemiseen painoitetuilla kursseilla oppii paljon paremmin, vaikka ne ovatkin myös huomattavasti luentokursseja työläämpiä tehdä. Ja verrattuna aijempiin isompii ohjelmointiprojekteihin tämä tuli tehtyä yksin, joka vielä edistää oppimista lisää. Loppuenlopuksi olen ihan tyytyväinen aikaan saamaani työhön, ja vaikka aloittaminen tuntui aivan kamalalta, loppua kohden työn tekeminen alkoikin parhaimmillaan olla ihan mukavaa.
+
 
 <a name="suunnitelma"/>
 ### Suunnitelma
