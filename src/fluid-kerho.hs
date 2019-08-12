@@ -9,6 +9,7 @@ import Graphics.UI.FLTK.LowLevel.Fl_Enumerations
 
 -- Tekijä: Jere Pakkanen
 -- Pvm: 12.8.2019
+-- Pääohjelma joka tekee fluid tiedostossa määritellyn käyttöliittymän
 main :: IO ()
 main = do
   win <- makeWindow

@@ -5,6 +5,8 @@ import qualified Data.Text as T
 
 -- Tekijä: Jere Pakkanen
 -- Pvm: 12.8.2019
+-- Määrittää tietorakenteet ja niiden käsittelyyn ja tarkastukseen vaadittavat funktiot
+
 
 -- Jäsenen tietorakenne
 data Jasen = Jasen { nimi :: Maybe T.Text
