@@ -24,6 +24,8 @@ import Control.Exception
 -- Tekijä: Jere Pakkanen
 -- Pvm: 12.8.2019
 -- Huolehtii käyttöliittymästä tehdyistä kutsuista, sekä ylläpitää kerhon tietorakennetta
+-- Sisältää koodia Aditya Siram:in (fltkhs tekijän) demosta fltkhs-table-sort (https://github.com/deech/fltkhs-demos).
+-- Koodi on merkitty ja sijaitsee lähdekoodin loppupäässä
 
 -- Pitää listaa siitä mitkä jäsenistä ovat haun mukaisia jolloin ne näytetään
 nakyvatJasenet :: IORef [Bool]
