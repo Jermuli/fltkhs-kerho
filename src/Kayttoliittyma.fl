@@ -189,15 +189,19 @@ _ <- add ylaMenu "&Tiedosto/&Tallenna" Nothing (Just tallennaKerho) (MenuItemFla
 _ <- add ylaMenu "&Tiedosto/&Avaa" Nothing (Just (latausIkkunaCallback nimiInput hetuInput katuosoiteInput postinmrInput postiosoiteInput kotipuhelinInput tyopuhelinInput autopuhelinInput liittymisvuosiInput jasenmaksuInput maksettuMaksuInput lisatietoInput jasenSelain hakuValitsin hakuKentta)) (MenuItemFlags []);
 _ <- add ylaMenu "&Tiedosto/&Lopeta" Nothing (Just quitCb) (MenuItemFlags []);
 _ <- add ylaMenu "&Muokkaa/&Vaihdan kerhon nimi" Nothing (Just vaihdaKerhonNimiCallback) (MenuItemFlags []);
+_ <- add ylaMenu "&Muokkaa/&Lisää jäsen" Nothing (Just (lisaaJasenCallbackMenu jasenSelain)) (MenuItemFlags []);
+_ <- add ylaMenu "&Muokkaa/&Poista jäsen" Nothing (Just (poistaJasenCallbackMenu jasenSelain)) (MenuItemFlags []);
+_ <- add ylaMenu "&Muokkaa/&Lisää harrastus" Nothing (Just (lisaaHarrastusCallbackMenu harrastusTable jasenSelain)) (MenuItemFlags []);
+_ <- add ylaMenu "&Muokkaa/&Poista harrastus" Nothing (Just (poistaHarrastusCallbackMenu jasenSelain harrastusTable)) (MenuItemFlags []);
 _ <- add ylaMenu "&Tietoja/&Apua" Nothing (Just apuaCallback) (MenuItemFlags []);
 _ <- add ylaMenu "&Tietoja/&Tietoja" Nothing (Just avaaTiedotCallback) (MenuItemFlags []);
 setCallback hakuKentta (hakuCallback jasenSelain hakuValitsin);
-setCallback poistaHarrastus (poistaHarrastusCallback jasenSelain harrastusTable);
+setCallback poistaHarrastus (poistaHarrastusCallbackButton jasenSelain harrastusTable);
 setCallback jasenSelain (valitseJasenCallback nimiInput hetuInput katuosoiteInput postinmrInput postiosoiteInput kotipuhelinInput tyopuhelinInput autopuhelinInput liittymisvuosiInput jasenmaksuInput maksettuMaksuInput lisatietoInput harrastusTable);
-setCallback lisaaHarrastus (lisaaHarrastusCallback harrastusTable jasenSelain);
+setCallback lisaaHarrastus (lisaaHarrastusCallbackButton harrastusTable jasenSelain);
 setCallback tallenna (muokkaaJasenCallback nimiInput hetuInput katuosoiteInput postinmrInput postiosoiteInput kotipuhelinInput tyopuhelinInput autopuhelinInput liittymisvuosiInput jasenmaksuInput maksettuMaksuInput lisatietoInput jasenSelain);
-setCallback uusiJasen (lisaaJasenCallback jasenSelain);
-setCallback poistaJasen (poistaJasenCallback jasenSelain);
+setCallback uusiJasen (lisaaJasenCallbackButton jasenSelain);
+setCallback poistaJasen (poistaJasenCallbackButton jasenSelain);
 latausIkkunanTeko nimiInput hetuInput katuosoiteInput postinmrInput postiosoiteInput kotipuhelinInput tyopuhelinInput autopuhelinInput liittymisvuosiInput jasenmaksuInput maksettuMaksuInput lisatietoInput jasenSelain hakuValitsin hakuKentta;} {selected
   }
   code {return paaIkkuna} {}

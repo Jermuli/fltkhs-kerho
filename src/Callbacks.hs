@@ -49,11 +49,12 @@ apuaCallback m = do
                     setBuffer display (Just buffer)
                     setText buffer (T.concat [  "Voit ladata uuden kerhon menupainikkseesta \"Avaa\", jos sen nimistä kerhoa ei löydy, se asettaa sen nykyiseksi kerhon nimeksi.\n",
                                                 "Voit vaihtaa kerhon nimeä milloin tahansa \"Muokkaa\" menupainikkseesta.\n",
-                                                "Jäsenen tietokentissä on on tarkistukset seuraavasti: \nnimi ei saa olla tulostumaton merkki (whitespace),\n",
-                                                "hetu on oltava muodossa ppkkvv-xxxx, jossa pp = päivä, kk = kuukausi, vv vuosi ja x mikä tahansa merkki,\n",
-                                                "postinumero on oltava 5 numeroinen luku,\n",
-                                                "puhelinnumerot on oltava 6-10 numeroisia lukuja\n",
-                                                "ja maksetun maksun on oltava pienempi kuin jäsenmaksun\n",
+                                                "Jäsenen tietokentissä on on tarkistukset seuraavasti: \nnimi ei saa olla tulostumaton merkki (whitespace)\n",
+                                                "Hetu on oltava muodossa ppkkvv-xxxx, jossa pp = päivä, kk = kuukausi, vv vuosi ja x mikä tahansa merkki\n",
+                                                "Postinumero on oltava 5 numeroinen luku\n",
+                                                "Puhelinnumerot on oltava 6-10 numeroisia lukuja\n",
+                                                "Liittymisvuoden on oltava suurempaa tai yhtäsuuri kun nykyinen vuosi\n",
+                                                "Maksetun maksun on oltava pienempi kuin jäsenmaksun\n",
                                                 "Harrastusta lisätessä, jokainen kenttä on täytettävä ja jäsen on oltava valittuna jäsenselaimesta\n",
                                                 "Harrastusten poisto/lisääminen ei tule näkymään heti, vaan käyttäjän on valittava jäsen uudestaan"])
                     end win
@@ -84,6 +85,8 @@ muokkaaJasenCallback n' h' k' pn' po' kp' tp' ap' lv' jm' mm' l' selain b' = do
             maksettuM   <- (getValue mm')
             lisa        <- (getValue l' )
             
+            liittymisTarkastus <- validoiLiittyminen (validoiInt True liittymis) -- Koska haemme nykyisen vuoden IO:n kautta, on liittymisvuoden validointi tehtävä erikseen
+            
             let tarkistamattomatTiedot = [  (n', (validoiNimi nimi)), 
                                             (h', (validoiHetu hetu)),
                                             (k', True),
@@ -92,12 +95,12 @@ muokkaaJasenCallback n' h' k' pn' po' kp' tp' ap' lv' jm' mm' l' selain b' = do
                                             (kp', (validoiPuhelin ((readMaybe (T.unpack kotiP)) :: Maybe Int))), 
                                             (tp', (validoiPuhelin ((readMaybe (T.unpack tyoP)) :: Maybe Int))), 
                                             (ap', (validoiPuhelin ((readMaybe (T.unpack autoP)) :: Maybe Int))),
-                                            (lv', True),
+                                            (lv', liittymisTarkastus),
                                             (jm', True),
                                             (mm', (validoiMaksu ((readMaybe (T.unpack maksettuM)) :: Maybe Double) ((readMaybe (T.unpack jasenM)) :: Maybe Double))),
                                             (l', True)]
             
-            tarkistetutTiedot <- mapM virheet tarkistamattomatTiedot
+            tarkistetutTiedot <- mapM virheet tarkistamattomatTiedot 
             if (T.strip nimi == "")
                 then do return ()
                 else do 
@@ -399,9 +402,19 @@ harrastusTekstiksi i harrastus = T.append (T.concat [(T.append (T.pack (show i))
 vertailu :: T.Text -> T.Text -> Bool
 vertailu a b = T.isInfixOf a b
 
+-- Jäsenen poisto callback menuitemeille
+poistaJasenCallbackMenu :: Ref SelectBrowser -> Ref MenuItem -> IO ()
+poistaJasenCallbackMenu selain m' = do
+                                        poistaJasenCallback selain
+
+-- Jäsenen poisto callback buttoneille
+poistaJasenCallbackButton :: Ref SelectBrowser -> Ref Button -> IO ()
+poistaJasenCallbackButton selain b' = do
+                                        poistaJasenCallback selain
+
 -- Poistaa jäsenen ylläpidetystä tietorakenteesta, sekä jäsenlistasta
-poistaJasenCallback :: Ref SelectBrowser -> Ref Button -> IO () -- MenuItemBase
-poistaJasenCallback selain b' = do
+poistaJasenCallback :: Ref SelectBrowser -> IO ()
+poistaJasenCallback selain = do
     line <- getValue selain
     sisalla <- displayed selain line
     if not sisalla
@@ -493,9 +506,19 @@ jasenenHarrastuksetApu harrastus = case ((laji harrastus), (aloitusvuosi harrast
                                             (Nothing, (Just b), (Just c))   -> [(T.pack ""), (T.pack (show b)), (T.pack (show c))]
                                             ((Just a), (Just b), (Just c))  -> [a, (T.pack (show b)), (T.pack (show c))]
 
+-- Harrastuksien lisäys callback buttoneille
+lisaaHarrastusCallbackButton :: Ref TableRow -> Ref SelectBrowser -> Ref Button -> IO ()
+lisaaHarrastusCallbackButton table selain b = do
+                                                lisaaHarrastusCallback table selain
+                                                
+-- Harrastuksien lisäys callback menuitemeille
+lisaaHarrastusCallbackMenu :: Ref TableRow -> Ref SelectBrowser -> Ref MenuItem -> IO ()
+lisaaHarrastusCallbackMenu table selain m = do 
+                                                lisaaHarrastusCallback table selain
+                                                
 -- Luodaan ikkuna jonka avulla käyttäjä voi lisätä uuden harrastuksen
-lisaaHarrastusCallback :: Ref TableRow -> Ref SelectBrowser -> Ref Button -> IO ()
-lisaaHarrastusCallback table selain b = do
+lisaaHarrastusCallback :: Ref TableRow -> Ref SelectBrowser -> IO ()
+lisaaHarrastusCallback table selain = do
                                     line <- getValue selain
                                     sisalla <- displayed selain line
                                     if not sisalla
@@ -567,9 +590,19 @@ jasenenValintaApu (x:xs) (y:ys) i = case (y, i) of
 tcToInt :: TableCoordinate -> Int
 tcToInt (TableCoordinate (Row x) y) = (read (show x))
 
+-- Harrastuksen poisto callback buttoneille
+poistaHarrastusCallbackButton :: Ref SelectBrowser -> Ref TableRow -> Ref Button -> IO ()
+poistaHarrastusCallbackButton selain taulu b = do 
+                                                poistaHarrastusCallback selain taulu
+                                                
+-- Harrastuksen poisto callback menuitemeille
+poistaHarrastusCallbackMenu :: Ref SelectBrowser -> Ref TableRow -> Ref MenuItem -> IO ()
+poistaHarrastusCallbackMenu selain taulu m = do 
+                                                poistaHarrastusCallback selain taulu
+                                                
 -- Poistaa valitun harrastuksen
-poistaHarrastusCallback :: Ref SelectBrowser -> Ref TableRow -> Ref Button -> IO ()
-poistaHarrastusCallback selain taulu b = do
+poistaHarrastusCallback :: Ref SelectBrowser -> Ref TableRow -> IO ()
+poistaHarrastusCallback selain taulu = do
                                     line <- getValue selain
                                     sisalla <- displayed selain line
                                     if not sisalla
@@ -592,9 +625,19 @@ poistaHarrastusCallback selain taulu b = do
                                                                         redraw taulu -- Tämäkään redraw ei toimi nykyiselle hetkelle (toimii tosin aijemmalle poistolle, jos listaa ei ole päivitetty välissä)
                                                     _               -> return ()
 
+-- Jäsenen lisäys callback buttoneille
+lisaaJasenCallbackButton :: Ref SelectBrowser -> Ref Button -> IO ()
+lisaaJasenCallbackButton selain b = do
+                                        lisaaJasenCallback selain
+                                        
+-- Jäsenen lisäys callback menu itemeille
+lisaaJasenCallbackMenu :: Ref SelectBrowser -> Ref MenuItem -> IO ()
+lisaaJasenCallbackMenu selain m = do
+                                        lisaaJasenCallback selain
+                                        
 -- Lisätään uusi jäsen oletusarvoilla tietorakenteeseen, sekä päivitetään jäsenlistaa
-lisaaJasenCallback :: Ref SelectBrowser -> Ref Button -> IO ()
-lisaaJasenCallback selain button = do
+lisaaJasenCallback :: Ref SelectBrowser -> IO ()
+lisaaJasenCallback selain = do
     modifyIORef valittuKerho (lisaaJasen (Jasen (Just (T.pack "uusi jäsen")) 
                                                 (Nothing)
                                                 (Nothing)

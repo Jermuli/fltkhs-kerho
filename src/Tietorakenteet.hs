@@ -2,6 +2,8 @@ module Tietorakenteet where
 import Data.List
 import Data.Char
 import qualified Data.Text as T
+import Data.Time.Clock
+import Data.Time.Calendar
 
 -- Tekijä: Jere Pakkanen
 -- Pvm: 12.8.2019
@@ -68,7 +70,23 @@ validoiMaksu :: Maybe Double -> Maybe Double -> Bool
 validoiMaksu maksettu maksu = case (maksettu, maksu) of
                                     (Just x, Just y)    -> (maksettu <= maksu)
                                     _                   -> False
-                        
+                                    
+-- Tarkistaa onko liittymisvuosi pienempi kun tämänhetkinen vuosi
+validoiLiittyminen :: Maybe Int -> IO (Bool)
+validoiLiittyminen liittyminen = do
+                            case liittyminen of
+                                Nothing ->  do  return False
+                                Just x  ->  do 
+                                                nyt <- getCurrentTime
+                                                let (vuosi, kk, pv) = toGregorian $ utctDay nyt
+                                                liittymisvuosi <- liittyminenIO x
+                                                return (liittymisvuosi <= (fromIntegral vuosi))
+
+-- Palautetaan liittymisvuosi IO:na, jotta vertailu voidaan tehdä
+liittyminenIO :: Int -> IO (Int)
+liittyminenIO liittyminen = do
+                            return (liittyminen)
+
 -- Looginen AND listoille
 tarkistaTotuudet :: [Bool] -> Bool
 tarkistaTotuudet [] = True
